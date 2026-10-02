@@ -81,6 +81,13 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 #pauseSettings .card{padding:14px}
 #pauseScreen .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
 @media(max-width:600px){#pauseScreen{padding:12px;gap:8px}#pauseScreen .modes{gap:8px}#pauseScreen .btn{padding:8px 14px}}
+
+.stamp-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-right:auto;font-weight:700}
+.stamp-status b{padding:6px 12px;border:2px solid #6f8580;border-radius:6px;background:#163a37;color:#f4ead2}
+.stamp-status[data-ink="APPROVED"] b{background:#164c43;border-color:#5cc5b5;color:#d4fff4}
+.stamp-status[data-ink="FORBIDDEN"] b{background:#622c23;border-color:#f07a62;color:#fff0e9}
+.stamp-status span{font-size:14px;color:var(--muted)}
+.playbar{align-items:center;gap:10px}
 </style>
 </head>
 <body>
@@ -91,7 +98,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
-  <div class="playbar"><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
+  <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
@@ -1045,6 +1052,7 @@ function hint2(){
 
 /* ---------------- update ---------------- */
 function update(dt){
+  stampFlashes = stampFlashes.filter(f => (f.t -= dt) > 0);
   time += dt;
   if(state === 'play' || state === 'dead') levelTime += dt;
 
@@ -1237,7 +1245,9 @@ function update(dt){
 }
 
 function inkColor(){ return stampMode==='APPROVED' ? C.teal : C.ketchup; }
+let stampFlashes = [];
 function stampFx(x,y){
+  stampFlashes.push({x,y,t:.65,ink:stampMode,color:inkColor()});
   burst(x,y,14,[inkColor(),C.paper],160); tone(150,.18,'square',.08);
 }
 function doAction(){
@@ -2181,6 +2191,17 @@ function render(){
   ctx.globalAlpha = 1;
   for(const f of floaters){ ctx.globalAlpha = Math.min(1, f.t); ctx.font = `bold 14px ${FB}`; const w = ctx.measureText(f.text).width; ctx.fillStyle = 'rgba(251,244,226,.8)'; rr(f.x-w/2-6, f.y-11, w+12, 22, 6); ctx.fill(); txt(f.text, f.x, f.y, 14, f.color, FB); ctx.globalAlpha = 1; }
   drawPrompts();
+  for(const f of stampFlashes){
+    ctx.save();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ctx.globalAlpha = Math.min(1, f.t*3);
+    ctx.strokeStyle = f.color; ctx.fillStyle = f.color; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(f.x,f.y,reduced ? 42 : 36+(1-f.t/.65)*22,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha *= .18; ctx.fill(); ctx.globalAlpha = Math.min(1,f.t*3);
+    ctx.fillStyle = C.night; ctx.fillRect(f.x-65,f.y-72,130,27);
+    txt(f.ink,f.x,f.y-53,15,f.color,FB);
+    ctx.restore();
+  }
   ctx.restore();
   drawOverlay();
   if(state !== 'title') drawHUD();
@@ -2233,10 +2254,18 @@ function frame(now){
   if(!paused) update(dt * (state==='play' || state==='dead' ? SET.speed : 1));
   render();
   pauseBtn.hidden = state !== 'play' && state !== 'dead';
+  const badge = document.getElementById('stampStatus');
+  badge.hidden = state === 'title';
+  const label = hasStamp ? stampMode : 'No stamp yet';
+  const inkLabel = document.getElementById('stampInk');
+  if(inkLabel.textContent !== label) inkLabel.textContent = label;
+  badge.dataset.ink = hasStamp ? stampMode : '';
+  document.getElementById('stampHelp').textContent = hasStamp ? 'V / L: switch ink · C / K: stamp' : 'Find the Official Stamp';
   requestAnimationFrame(frame);
 }
 
 function startGame(mode, lvl){
+  stampFlashes = [];
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   if(mode === 'relaxed' || mode === 'standard') applyPreset(mode);
   LEVEL = lvl || LEVEL || 1;
