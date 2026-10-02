@@ -72,6 +72,15 @@ td:first-child{color:var(--mustard);font-weight:700;white-space:nowrap;padding-r
 ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:7px}
 .rule{font-size:14px;color:var(--muted);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.playbar{display:flex;justify-content:flex-end}
+.playbar .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
+#pauseScreen{z-index:5;overflow:auto;justify-content:flex-start;padding:24px 16px;background:rgba(15,43,41,.96)}
+#pauseScreen h2{font-size:clamp(28px,5vw,44px)}
+#pauseSettings{width:100%;max-width:900px;text-align:left}
+#pauseSettings .card{padding:14px}
+#pauseScreen .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
+@media(max-width:600px){#pauseScreen{padding:12px;gap:8px}#pauseScreen .modes{gap:8px}#pauseScreen .btn{padding:8px 14px}}
 </style>
 </head>
 <body>
@@ -82,6 +91,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
+  <div class="playbar"><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
@@ -97,6 +107,16 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
         <button class="btn alt" id="startStandard">Standard<small>The original challenge</small></button>
       </div>
       <p style="font-size:13px;color:var(--muted)">You can fine-tune any of this below the game, even mid-level.</p>
+    </div>
+    <div class="overlay" id="pauseScreen" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
+      <h2 id="pauseTitle">Breakfast on hold</h2>
+      <p>The game is paused. Take your time.</p>
+      <div class="modes">
+        <button class="btn" id="resumeBtn" type="button">Resume</button>
+        <button class="btn alt" id="restartBtn" type="button">Restart Level</button>
+        <button class="btn alt" id="pauseSettingsBtn" type="button" aria-expanded="false" aria-controls="pauseSettings">Settings</button>
+      </div>
+      <div id="pauseSettings" hidden></div>
     </div>
     <div class="overlay" id="winScreen" hidden>
       <span class="tag" id="winTag">Level concluded (unofficially)</span>
@@ -268,6 +288,7 @@ const keys = {left:false,right:false,jump:false,whistle:false,action:false,ink:f
 const pressed = new Set();
 const KEYMAP = {ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyZ:'jump',KeyX:'whistle',KeyJ:'whistle',KeyC:'action',KeyK:'action',KeyV:'ink',KeyL:'ink',KeyS:'stretch',ArrowDown:'stretch',KeyI:'stretch',KeyE:'pocket',KeyU:'pocket'};
 function press(k){
+  if(paused) return;
   if(!keys[k]){
     pressed.add(k);
     if(SET.walk && (k==='left' || k==='right')){ const d = k==='right' ? 1 : -1; autoDir = autoDir === d ? 0 : d; edgeStopped = false; }
@@ -276,6 +297,11 @@ function press(k){
 }
 function release(k){ keys[k] = false; }
 window.addEventListener('keydown', e => {
+  if(e.code === 'Escape' || (e.code === 'KeyP' && e.target === cv)){
+    if(paused || state === 'play' || state === 'dead'){ e.preventDefault(); togglePause(); }
+    return;
+  }
+  if(paused || e.target.closest('button, a, input, select, textarea')) return;
   if(e.code === 'KeyM'){ soundOn = !soundOn; popup(soundOn ? 'Sound: Approved' : 'Sound: Suspended Pending Review'); return; }
   if(e.code === 'Enter' && state === 'title'){ startGame(SET.nofail ? 'relaxed' : 'standard', startLevelChoice); return; }
   const k = KEYMAP[e.code]; if(!k) return;
@@ -2161,14 +2187,57 @@ function render(){
 }
 
 /* ---------------- loop ---------------- */
+let paused = false;
+const pauseScreen = document.getElementById('pauseScreen');
+const pauseBtn = document.getElementById('pauseBtn');
+const settingsPanel = document.querySelector('.settings');
+const settingsHome = document.createElement('div');
+settingsPanel.before(settingsHome);
+function clearInput(){ for(const k in keys) keys[k] = false; pressed.clear(); autoDir = 0; edgeStopped = false; }
+function restoreSettings(){
+  settingsHome.after(settingsPanel);
+  document.getElementById('pauseSettings').hidden = true;
+  document.getElementById('pauseSettingsBtn').setAttribute('aria-expanded','false');
+}
+function resumeGame(){
+  paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
+  last = performance.now(); cv.focus();
+}
+function togglePause(){
+  if(paused){ resumeGame(); return; }
+  if(state !== 'play' && state !== 'dead') return;
+  paused = true; clearInput(); pauseScreen.hidden = false;
+  document.getElementById('resumeBtn').focus();
+}
+pauseBtn.addEventListener('click', togglePause);
+document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+document.getElementById('restartBtn').addEventListener('click', () => startGame(null, LEVEL));
+document.getElementById('pauseSettingsBtn').addEventListener('click', () => {
+  const box = document.getElementById('pauseSettings');
+  if(box.hidden){ box.append(settingsPanel); box.hidden = false; }
+  else restoreSettings();
+  document.getElementById('pauseSettingsBtn').setAttribute('aria-expanded',String(!box.hidden));
+});
+pauseScreen.addEventListener('keydown', e => {
+  if(e.code !== 'Tab') return;
+  const buttons = [...pauseScreen.querySelectorAll('button')].filter(b => !b.closest('[hidden]'));
+  const first = buttons[0], end = buttons[buttons.length-1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); end.focus(); }
+  else if(!e.shiftKey && document.activeElement === end){ e.preventDefault(); first.focus(); }
+});
+window.addEventListener('blur', () => { if(!paused && (state === 'play' || state === 'dead')) togglePause(); });
+document.addEventListener('visibilitychange', () => { if(document.hidden && !paused && (state === 'play' || state === 'dead')) togglePause(); });
 let last = performance.now();
 function frame(now){
   const dt = Math.min(1/30, (now-last)/1000); last = now;
-  update(dt * (state==='play' || state==='dead' ? SET.speed : 1)); render();
+  if(!paused) update(dt * (state==='play' || state==='dead' ? SET.speed : 1));
+  render();
+  pauseBtn.hidden = state !== 'play' && state !== 'dead';
   requestAnimationFrame(frame);
 }
 
 function startGame(mode, lvl){
+  paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   if(mode === 'relaxed' || mode === 'standard') applyPreset(mode);
   LEVEL = lvl || LEVEL || 1;
   autoDir = 0; edgeStopped = false;
