@@ -1218,11 +1218,8 @@ function update(dt){
     if(it.got || it.hidden) continue;
     if(Math.hypot(it.x-pcx(), it.y-pcy()) < 30){
       it.got = true;
-      if(it.t==='eggform'){
-    ctx.fillStyle=C.paper;ctx.strokeStyle=C.tealDark;ctx.lineWidth=2;ctx.fillRect(it.x-12,it.y-16,24,30);ctx.strokeRect(it.x-12,it.y-16,24,30);
-    txt('Y',it.x,it.y+4,18,C.tealDark,FB);return;
-  }
-  if(it.t==='yawn'){ tone(980,.08,'sine',.05,1300); burst(it.x,it.y,6,[C.paper,'#cfe8ff']); }
+      if(it.t==='eggform'){tone(600,.2,'triangle',.06,900);floatText('Return this to Mr. Yolk',it.x,it.y-25,C.tealDark);}
+      if(it.t==='yawn'){ tone(980,.08,'sine',.05,1300); burst(it.x,it.y,6,[C.paper,'#cfe8ff']); }
       if(it.t==='form'){ tone(600,.2,'triangle',.06,900); floatText(it.name, it.x, it.y-20, C.ink); }
       if(it.t==='button'){ tone(400,.3,'square',.05,200); floatText('You took THE BUTTON?', it.x, it.y-20, C.ketchup); popup('LOOSE BUTTON acquired. Several eggs are now uncomfortable.'); }
       if(it.t==='nothing'){ tone(1200,.4,'sine',.06,600); achieve('Collected Nothing (Certified)'); floatText('[ ] Certified', it.x, it.y-20, C.tealDark); }
