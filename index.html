@@ -110,6 +110,14 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .stage .tutorial{position:relative;min-height:0;display:flex}
 .stage:has(.tutorial:not([hidden])) .overlay{top:0}
 @media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:0}.stage .tutorial{min-height:0;flex-wrap:wrap}.stage .tutorial-copy{flex-basis:100%}.stage .tutorial button{max-width:none}.stage:has(.tutorial:not([hidden])) .overlay{top:0}}
+
+.encounter-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.encounter-tools .btn{font-family:var(--body);font-size:16px;border-radius:8px;min-height:48px}
+#questStatus{font-size:16px;color:var(--ink)}
+#eggDialog{z-index:8;background:#fbf4e2;color:#201b14;overflow:auto;justify-content:flex-start;padding:24px}
+#eggDialog h2{font-size:32px;color:#164c43}
+#eggDialog p{color:#201b14;font-size:18px}
+#eggDialog .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
 </style>
 </head>
 <body>
@@ -120,6 +128,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
+  <div class="encounter-tools"><button class="btn alt" id="talkEgg" type="button" hidden>Talk to Mr. Yolk</button><span id="questStatus" role="status" aria-live="polite"></span></div>
   <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
   <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
@@ -138,6 +147,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       </div>
       <p style="font-size:13px;color:var(--muted)">You can fine-tune any of this below the game, even mid-level.</p>
     </div>
+    <div class="overlay" id="eggDialog" role="dialog" aria-modal="true" aria-labelledby="eggTitle" hidden><h2 id="eggTitle">Mr. Yolk, Department of Waiting</h2><p id="eggWords"></p><div class="modes"><button class="btn" id="eggHelp" type="button">Find his missing form</button><button class="btn alt" id="eggWhistle" type="button">Whistle away the hold music</button><button class="btn alt" id="eggLeave" type="button">Back to the road</button></div></div>
     <div class="overlay" id="pauseScreen" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
       <h2 id="pauseTitle">Breakfast on hold</h2>
       <p>The game is paused. Take your time.</p>
@@ -328,6 +338,8 @@ function press(k){
 }
 function release(k){ keys[k] = false; }
 window.addEventListener('keydown', e => {
+  if(!eggDialog.hidden) return;
+  if(e.code === 'KeyT' && state === 'play' && !paused && nearEgg()){e.preventDefault();openEgg();return;}
   if(e.code === 'Escape' || (e.code === 'KeyP' && e.target === cv)){
     if(paused || state === 'play' || state === 'dead'){ e.preventDefault(); togglePause(); }
     return;
@@ -1093,6 +1105,7 @@ function update(dt){
   if(state === 'dead'){ deadT -= dt; if(deadT <= 0){ state='play'; spawnPlayer(); } pressed.clear(); return; }
   if(state === 'win'){ winT += dt; exitDoor.applause += dt; if(Math.random()<.5) burst((LEVEL===1?4960:exit2.x+20)+Math.random()*80-40, (LEVEL===1?150:280)+Math.random()*60, 2, [C.mustard,C.ketchup,C.teal,C.paper], 140); if(winT > 2.6 && document.getElementById('winScreen').hidden) showWin(); pressed.clear(); return; }
   if(state !== 'play'){ pressed.clear(); return; }
+  updateEggQuest();
 
   // --- player movement
   if(zip) updateZip(dt);
@@ -1205,7 +1218,11 @@ function update(dt){
     if(it.got || it.hidden) continue;
     if(Math.hypot(it.x-pcx(), it.y-pcy()) < 30){
       it.got = true;
-      if(it.t==='yawn'){ tone(980,.08,'sine',.05,1300); burst(it.x,it.y,6,[C.paper,'#cfe8ff']); }
+      if(it.t==='eggform'){
+    ctx.fillStyle=C.paper;ctx.strokeStyle=C.tealDark;ctx.lineWidth=2;ctx.fillRect(it.x-12,it.y-16,24,30);ctx.strokeRect(it.x-12,it.y-16,24,30);
+    txt('Y',it.x,it.y+4,18,C.tealDark,FB);return;
+  }
+  if(it.t==='yawn'){ tone(980,.08,'sine',.05,1300); burst(it.x,it.y,6,[C.paper,'#cfe8ff']); }
       if(it.t==='form'){ tone(600,.2,'triangle',.06,900); floatText(it.name, it.x, it.y-20, C.ink); }
       if(it.t==='button'){ tone(400,.3,'square',.05,200); floatText('You took THE BUTTON?', it.x, it.y-20, C.ketchup); popup('LOOSE BUTTON acquired. Several eggs are now uncomfortable.'); }
       if(it.t==='nothing'){ tone(1200,.4,'sine',.06,600); achieve('Collected Nothing (Certified)'); floatText('[ ] Certified', it.x, it.y-20, C.tealDark); }
@@ -2258,6 +2275,48 @@ function tutorialAction(k){
 function endTutorial(){tutorialStep = -1; tutorialDoneTime = 0; showTutorialStep();}
 document.getElementById('skipTutorial').addEventListener('click', () => {endTutorial(); cv.focus();});
 
+
+let eggQuest = 'new', eggWasPaused = false;
+const eggDialog = document.getElementById('eggDialog');
+function nearEgg(){return LEVEL === 1 && Math.abs(pcx()-480)<130 && Math.abs(pcy()-(GY-25))<100;}
+function closeEgg(){eggDialog.hidden=true;paused=eggWasPaused;clearInput();last=performance.now();cv.focus();}
+function openEgg(){
+  if(!nearEgg() || state!=='play')return;
+  eggWasPaused=paused;paused=true;clearInput();
+  const form=collect.find(c=>c.t==='eggform');
+  if(eggQuest==='fetch' && form && form.got){
+    eggQuest='helped';gate.open=true;gate.t=1;
+    for(let n=0;n<3;n++)collect.push({t:'yawn',x:560+n*40,y:400,got:false});
+    achieve('Expedited Breakfast');eggs[0].line='Your paperwork has opened doors. Literally.';
+  }
+  document.getElementById('eggWords').textContent=eggQuest==='new' ? 'I have been on hold since Tuesday. My form blew down the road. Bring it back and I can open the breakfast gate. Or whistle near me to end the hold music; I will save you a place here.' : eggQuest==='fetch' ? 'The missing form is by the road, just before the whistle gate. Bring it back to me.' : eggQuest==='music' ? 'One whistle, right here. If the Yolk Department answers, pretend you are a kettle.' : eggQuest==='helped' ? 'Form received! The gate is open, and three extra Yawns are waiting down the road. Efficient? Please keep that accusation to yourself.' : 'Silence! Glorious silence. This is now your return point if you fall. Your place in the queue is safe.';
+  document.getElementById('eggHelp').hidden=eggQuest!=='new';
+  document.getElementById('eggWhistle').hidden=eggQuest!=='new';
+  eggDialog.hidden=false;
+  document.getElementById(eggQuest==='new'?'eggHelp':'eggLeave').focus();
+}
+document.getElementById('talkEgg').addEventListener('click',openEgg);
+document.getElementById('eggHelp').addEventListener('click',()=>{
+  eggQuest='fetch';collect.push({t:'eggform',x:850,y:GY-28,got:false,name:'Mr. Yolk’s missing form'});closeEgg();
+});
+document.getElementById('eggWhistle').addEventListener('click',()=>{eggQuest='music';closeEgg();});
+document.getElementById('eggLeave').addEventListener('click',closeEgg);
+eggDialog.addEventListener('keydown',e=>{
+  if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeEgg();}
+  if(e.code==='Tab'){
+    const bs=[...eggDialog.querySelectorAll('button')].filter(b=>!b.hidden),first=bs[0],end=bs[bs.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();end.focus();}
+    else if(!e.shiftKey&&document.activeElement===end){e.preventDefault();first.focus();}
+  }
+});
+function updateEggQuest(){
+  if(eggQuest==='music'&&nearEgg()&&pressed.has('whistle')){
+    eggQuest='quiet';respawn={x:480,y:GY-40,first:false};
+    achieve('Held Your Place');eggs[0].line='Your place is saved. Please do not become breakfast.';
+    floatText('RETURN POINT SAVED',480,GY-90,C.teal);
+  }
+}
+
 /* ---------------- loop ---------------- */
 let paused = false;
 const pauseScreen = document.getElementById('pauseScreen');
@@ -2276,6 +2335,7 @@ function resumeGame(){
   last = performance.now(); cv.focus();
 }
 function togglePause(){
+  if(!eggDialog.hidden) return;
   if(paused){ resumeGame(); return; }
   if(state !== 'play' && state !== 'dead') return;
   paused = true; clearInput(); pauseScreen.hidden = false;
@@ -2304,6 +2364,10 @@ function frame(now){
   const dt = Math.min(1/30, (now-last)/1000); last = now;
   if(!paused) update(dt * (state==='play' || state==='dead' ? SET.speed : 1));
   render();
+  document.getElementById('talkEgg').hidden = state!=='play'||paused||!nearEgg();
+  const form = collect.find(c=>c.t==='eggform');
+  const questText = LEVEL!==1||state==='title' ? '' : eggQuest==='fetch' ? (form&&form.got ? 'Return the form to Mr. Yolk.' : 'Find Mr. Yolk’s form before the gate.') : eggQuest==='music' ? 'Whistle beside Mr. Yolk.' : eggQuest==='helped' ? 'Mr. Yolk opened the gate. Bonus Yawns ahead!' : eggQuest==='quiet' ? 'Mr. Yolk saved your return point.' : nearEgg() ? 'Mr. Yolk needs a hand. Talk or press T.' : '';
+  const questLabel=document.getElementById('questStatus');if(questLabel.textContent!==questText)questLabel.textContent=questText;
   pauseBtn.hidden = state !== 'play' && state !== 'dead';
   const badge = document.getElementById('stampStatus');
   badge.hidden = state === 'title';
@@ -2316,6 +2380,7 @@ function frame(now){
 }
 
 function startGame(mode, lvl){
+  eggQuest='new';eggDialog.hidden=true;
   stampFlashes = [];
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   if(mode === 'relaxed' || mode === 'standard') applyPreset(mode);
