@@ -105,6 +105,11 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .stage:has(.tutorial:not([hidden])) canvas{height:auto;aspect-ratio:16/9}
 .stage:has(.tutorial:not([hidden])) .overlay{top:132px}
 @media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:200px}.stage .tutorial{min-height:200px;padding:12px;align-items:flex-start;gap:8px}.stage .tutorial-copy strong{font-size:20px}.stage .tutorial-copy p{font-size:18px}.stage .tutorial button{max-width:90px}.stage:has(.tutorial:not([hidden])) .overlay{top:200px}}
+
+.stage:has(.tutorial:not([hidden])){padding-top:0;aspect-ratio:auto}
+.stage .tutorial{position:relative;min-height:0;display:flex}
+.stage:has(.tutorial:not([hidden])) .overlay{top:0}
+@media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:0}.stage .tutorial{min-height:0;flex-wrap:wrap}.stage .tutorial-copy{flex-basis:100%}.stage .tutorial button{max-width:none}.stage:has(.tutorial:not([hidden])) .overlay{top:0}}
 </style>
 </head>
 <body>
