@@ -88,6 +88,13 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .stamp-status[data-ink="FORBIDDEN"] b{background:#622c23;border-color:#f07a62;color:#fff0e9}
 .stamp-status span{font-size:14px;color:var(--muted)}
 .playbar{align-items:center;gap:10px}
+
+.tutorial{background:var(--panel);border:2px solid var(--signal);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.tutorial-copy{flex:1;min-width:0}.tutorial-copy strong{display:block;color:var(--mustard);font-size:18px}
+.tutorial-copy p{margin:4px 0 0;font-size:16px}
+.tutorial button{font-family:var(--body);font-size:14px;min-height:44px;padding:8px 12px;border:2px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer}
+.tutorial button:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
+@media(max-width:600px){.tutorial{align-items:flex-start;padding:10px;gap:8px}}
 </style>
 </head>
 <body>
@@ -98,6 +105,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
+  <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
   <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
@@ -296,6 +304,7 @@ const pressed = new Set();
 const KEYMAP = {ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',Space:'jump',ArrowUp:'jump',KeyW:'jump',KeyZ:'jump',KeyX:'whistle',KeyJ:'whistle',KeyC:'action',KeyK:'action',KeyV:'ink',KeyL:'ink',KeyS:'stretch',ArrowDown:'stretch',KeyI:'stretch',KeyE:'pocket',KeyU:'pocket'};
 function press(k){
   if(paused) return;
+  if(state === 'play') tutorialAction(k);
   if(!keys[k]){
     pressed.add(k);
     if(SET.walk && (k==='left' || k==='right')){ const d = k==='right' ? 1 : -1; autoDir = autoDir === d ? 0 : d; edgeStopped = false; }
@@ -1052,6 +1061,8 @@ function hint2(){
 
 /* ---------------- update ---------------- */
 function update(dt){
+  if(tutorialDoneTime > 0 && state === 'play'){ tutorialDoneTime -= dt; if(tutorialDoneTime <= 0) endTutorial(); }
+  if(state === 'win' && tutorialStep >= 0) endTutorial();
   stampFlashes = stampFlashes.filter(f => (f.t -= dt) > 0);
   time += dt;
   if(state === 'play' || state === 'dead') levelTime += dt;
@@ -2207,6 +2218,31 @@ function render(){
   if(state !== 'title') drawHUD();
 }
 
+
+let tutorialStep = -1, tutorialDoneTime = 0;
+const tutorialBox = document.getElementById('tutorial');
+const tutorialSteps = [
+  ['1 of 3: Move right','Use Right Arrow or D, or the on-screen right button.'],
+  ['2 of 3: Jump','Press Space, W, Z, or Up, or tap Jump. Try reaching a ledge.'],
+  ['3 of 3: Whistle','Press X or J, or tap Whistle. Whistle near the gate with the whistle plaque to open it.']
+];
+function showTutorialStep(){
+  tutorialBox.hidden = tutorialStep < 0;
+  if(tutorialStep < 0) return;
+  const step = tutorialStep < 3 ? tutorialSteps[tutorialStep] : ['You are officially unofficial','Keep going right. Whistle near signs, eggs, and the gate for a response.'];
+  document.getElementById('tutorialTitle').textContent = step[0];
+  document.getElementById('tutorialText').textContent = step[1] + (tutorialStep === 0 && SET.walk ? ' Tap once to walk; tap again to stop.' : '');
+  document.getElementById('skipTutorial').textContent = tutorialStep === 3 ? 'Dismiss' : 'Skip tutorial';
+}
+function beginTutorial(){tutorialStep = LEVEL === 1 ? 0 : -1; tutorialDoneTime = 0; showTutorialStep();}
+function tutorialAction(k){
+  if((tutorialStep === 0 && k === 'right') || (tutorialStep === 1 && k === 'jump') || (tutorialStep === 2 && k === 'whistle')){
+    tutorialStep++; if(tutorialStep === 3) tutorialDoneTime = 8; showTutorialStep();
+  }
+}
+function endTutorial(){tutorialStep = -1; tutorialDoneTime = 0; showTutorialStep();}
+document.getElementById('skipTutorial').addEventListener('click', () => {endTutorial(); cv.focus();});
+
 /* ---------------- loop ---------------- */
 let paused = false;
 const pauseScreen = document.getElementById('pauseScreen');
@@ -2271,7 +2307,7 @@ function startGame(mode, lvl){
   LEVEL = lvl || LEVEL || 1;
   autoDir = 0; edgeStopped = false;
   audio(); popups = [];
-  reset(true); state = 'play';
+  reset(true); state = 'play'; beginTutorial();
   document.getElementById('titleScreen').hidden = true;
   document.getElementById('winScreen').hidden = true;
   cv.focus();
