@@ -95,6 +95,16 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .tutorial button{font-family:var(--body);font-size:14px;min-height:44px;padding:8px 12px;border:2px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer}
 .tutorial button:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
 @media(max-width:600px){.tutorial{align-items:flex-start;padding:10px;gap:8px}}
+
+/* Keep the current instruction close to the action and readable. */
+.stage:has(.tutorial:not([hidden])){padding-top:132px;aspect-ratio:auto}
+.stage .tutorial{position:absolute;top:0;left:0;right:0;z-index:4;margin:0;border:0;border-bottom:3px solid #5cc5b5;border-radius:0;background:#fbf4e2;color:#201b14;min-height:132px;padding:16px 20px;align-items:center}
+.stage .tutorial-copy strong{font-family:var(--body);font-size:22px;line-height:1.3;color:#153e38}
+.stage .tutorial-copy p{font-size:20px;line-height:1.4;color:#201b14;max-width:65ch}
+.stage .tutorial button{background:#fff;color:#201b14;border-color:#405b56;font-size:16px;min-height:48px;flex-shrink:0}
+.stage:has(.tutorial:not([hidden])) canvas{height:auto;aspect-ratio:16/9}
+.stage:has(.tutorial:not([hidden])) .overlay{top:132px}
+@media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:200px}.stage .tutorial{min-height:200px;padding:12px;align-items:flex-start;gap:8px}.stage .tutorial-copy strong{font-size:20px}.stage .tutorial-copy p{font-size:18px}.stage .tutorial button{max-width:90px}.stage:has(.tutorial:not([hidden])) .overlay{top:200px}}
 </style>
 </head>
 <body>
@@ -105,9 +115,9 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
-  <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
   <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
+  <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
       <span class="tag">Planned Unit 12 · Recommended Vertical Slice</span>
