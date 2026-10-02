@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="BLORT: The Gumphastic Yawn Parade. A playable absurdist platformer vertical slice.">
-<title>BLORT: The Gumphastic Yawn Parade</title>
+<title>Permit to Toast</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -72,42 +72,6 @@ td:first-child{color:var(--mustard);font-weight:700;white-space:nowrap;padding-r
 ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;gap:7px}
 .rule{font-size:14px;color:var(--muted);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-
-/* Lance OS / Luna-inspired game menus */
-:root{--bg:#dce8fb;--panel:#ece9d8;--line:#9b9a8c;--ink:#202020;--muted:#4c5363;--mustard:#8050b5;--signal:#245edb;--body:Tahoma,"Atkinson Hyperlegible",Verdana,sans-serif;color-scheme:light}
-body{background:linear-gradient(135deg,#dce8fb,#b6cdf2);padding-top:16px}
-.wrap{gap:16px}
-header{background:linear-gradient(#3988f5 0%,#1666dc 45%,#0751bf 95%);border:1px solid #064394;border-radius:8px 8px 0 0;padding:14px 20px;box-shadow:inset 0 1px 0 #89baff,0 2px 5px #25487833}
-header .eyebrow{color:#e4eeff;font-size:14px;letter-spacing:.04em}
-header h1{color:#fff;text-shadow:2px 2px #123c88;font-size:clamp(28px,5vw,44px)}
-header .sub{color:#fff;font-size:14px}
-.stage{border:3px solid #245edb;border-radius:4px;box-shadow:0 3px 10px #25487844}
-.overlay{background:linear-gradient(145deg,#f7f4e9f5,#ece9d8f5);color:var(--ink);overflow:auto;justify-content:safe center}
-.overlay h2{color:#8050b5;text-shadow:2px 2px #fff;font-size:clamp(32px,6vw,60px)}
-.overlay p{color:#202020;font-size:clamp(14px,1.8vw,17px)}
-.overlay .tag{color:#174ca1;font-family:var(--body);letter-spacing:.04em;font-size:14px}
-.btn,.btn.alt,.tog,.touch button,.touch button.big{font-family:var(--body);border:1px solid #6a7895;border-radius:4px;background:linear-gradient(#fff,#f0eee5 70%,#ddd9ca);color:#202020;box-shadow:inset 0 1px 0 #fff,0 1px 2px #0002;min-height:48px}
-.btn,.btn.alt{font-size:18px;font-weight:700;padding:10px 24px}
-.btn:hover,.tog:hover,.touch button:hover{filter:none;border-color:#235edb;box-shadow:inset 0 0 0 2px #f7ce74}
-.btn:active,.tog:active{background:#dedace;box-shadow:inset 1px 1px 3px #999}
-#startRelaxed{border:2px solid #245edb;box-shadow:inset 0 0 0 1px #adc7f7}
-.btn small,.tog span{font-size:14px;color:#4c5363;opacity:1}
-.tog[aria-pressed="true"]{color:#143b78;background:linear-gradient(#e5eeff,#c9dcfa);border-color:#245edb;box-shadow:inset 0 0 0 1px #fff}
-.btn:focus-visible,.tog:focus-visible,.touch button:focus-visible,.xp-links a:focus-visible{outline:3px solid #8050b5;outline-offset:3px}
-.card{border:1px solid #8c9cbc;border-radius:5px;background:#ece9d8;box-shadow:0 2px 5px #25487822;padding:0 18px 18px}
-.card h3{font-family:var(--body);font-size:18px;font-weight:700;color:#fff;background:linear-gradient(#3988f5,#0751bf);margin:0 -18px 14px!important;padding:7px 14px;border-radius:4px 4px 0 0}
-.settings .lbl{color:#174ca1}
-.keys{background:#ece9d8;border:1px solid #a5abc0;padding:12px;border-radius:4px;font-size:14px;color:#303849}
-kbd{background:#fff;color:#202020;border-color:#999;font-size:14px;border-radius:3px}
-td:first-child,.stats b{color:#63318e}
-.xp-links{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
-.xp-links a{font-size:14px;color:#174ca1;background:#fff8;border:1px solid #9b9a8c;border-radius:3px;padding:6px 14px;min-height:36px}
-.touch{flex-wrap:wrap}
-.touch .grp{flex-wrap:wrap}
-.touch button{font-size:16px}
-.touch button.big{background:linear-gradient(#fff3bc,#ecc24c);border-color:#9b7410}
-@media(max-width:600px){body{padding-inline:8px}.overlay{gap:8px;padding:10px}.stage:has(#titleScreen:not([hidden])){aspect-ratio:auto;min-height:480px}.stage:has(#titleScreen:not([hidden])) canvas{position:absolute;inset:0}.btn,.btn.alt{padding:8px 14px}.settings .row{gap:8px}}
-
 </style>
 </head>
 <body>
@@ -121,7 +85,7 @@ td:first-child,.stats b{color:#63318e}
   <div class="stage" id="stage">
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
-      <span class="tag">The Gumphastic Yawn Parade</span>
+      <span class="tag">Planned Unit 12 · Recommended Vertical Slice</span>
       <h2>BLORT</h2>
       <p>You are General Mustardseed Gumbo, a sentient whistle-shaped sock. Breakfast ends when approved. Go right.</p>
       <div class="modes" role="group" aria-label="Choose a level">
@@ -129,10 +93,10 @@ td:first-child,.stats b{color:#63318e}
         <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span></button>
       </div>
       <div class="modes">
-        <button class="btn" id="startRelaxed">Play Relaxed<small>Tap to walk, no failing, slower</small></button>
-        <button class="btn alt" id="startStandard">Play Standard<small>The original challenge</small></button>
+        <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
+        <button class="btn alt" id="startStandard">Standard<small>The original challenge</small></button>
       </div>
-      <nav class="xp-links" aria-label="Game help"><a href="#playSettings">Settings</a><a href="#howToPlay">How to Play</a></nav><p style="font-size:14px;color:var(--muted)">Relaxed mode: tap to walk, safer jumps, and no failing.</p>
+      <p style="font-size:13px;color:var(--muted)">You can fine-tune any of this below the game, even mid-level.</p>
     </div>
     <div class="overlay" id="winScreen" hidden>
       <span class="tag" id="winTag">Level concluded (unofficially)</span>
@@ -161,7 +125,7 @@ td:first-child,.stats b{color:#63318e}
     </div>
   </div>
 
-  <div class="keys" id="howToPlay" tabindex="-1">
+  <div class="keys">
     <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>A</kbd> <kbd>D</kbd> move</span>
     <span><kbd>Space</kbd> <kbd>W</kbd> <kbd>Z</kbd> jump</span>
     <span><kbd>X</kbd> <kbd>J</kbd> Whistle Blast</span>
@@ -172,7 +136,7 @@ td:first-child,.stats b{color:#63318e}
     <span><kbd>M</kbd> sound on/off</span>
   </div>
 
-  <section class="card settings" id="playSettings" tabindex="-1" aria-label="Play settings">
+  <section class="card settings" aria-label="Play settings">
     <h3 style="margin:0">Play settings</h3>
     <div class="row">
       <span class="lbl">Quick presets</span>
