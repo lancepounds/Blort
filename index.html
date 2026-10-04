@@ -123,9 +123,9 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 <body>
 <div class="wrap">
   <header>
-    <span class="eyebrow">BLORT · The Gumphastic Yawn Parade · World 1-1</span>
-    <h1>Permit to Toast</h1>
-    <p class="sub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
+    <span class="eyebrow" id="worldLabel">BLORT · The Gumphastic Yawn Parade · World 1-1</span>
+    <h1 id="levelHeading">Permit to Toast</h1>
+    <p class="sub" id="levelSub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
   <div class="encounter-tools"><button class="btn alt" id="talkEgg" type="button" hidden>Talk to Mr. Yolk</button><span id="questStatus" role="status" aria-live="polite"></span></div>
@@ -2511,12 +2511,25 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
+
+function setLevelHeading(lvl){
+  const data = lvl===3
+    ? ['BLORT · The Gumphastic Yawn Parade · World 2-1','The Department of Outdoor Indoors','A forest working inside an office building. Approve the leafy elevators, file the river, and reach Tuesday.']
+    : lvl===2
+      ? ['BLORT · The Gumphastic Yawn Parade · World 1-2','The Annex of Unnecessary Confrontations','Sock Stretch, the Emergency Pocket, and four confrontations that were not strictly necessary.']
+      : ['BLORT · The Gumphastic Yawn Parade · World 1-1','Permit to Toast','Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.'];
+  document.getElementById('worldLabel').textContent=data[0];
+  document.getElementById('levelHeading').textContent=data[1];
+  document.getElementById('levelSub').textContent=data[2];
+  document.title=data[1]+' · BLORT';
+}
+
 function startGame(mode, lvl){
   eggQuest='new';eggDialog.hidden=true;
   stampFlashes = [];
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   if(mode === 'relaxed' || mode === 'standard') applyPreset(mode);
-  LEVEL = lvl || LEVEL || 1;
+  LEVEL = lvl || LEVEL || 1; setLevelHeading(LEVEL);
   autoDir = 0; edgeStopped = false;
   audio(); popups = [];
   reset(true); state = 'play'; beginTutorial();
@@ -2531,7 +2544,7 @@ document.getElementById('startStandard').addEventListener('click', () => startGa
 document.getElementById('againBtn').addEventListener('click', () => startGame(null, LEVEL));
 document.getElementById('nextBtn').addEventListener('click', () => startGame(null, LEVEL === 1 ? 2 : 3));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
-  startLevelChoice = +b.dataset.level;
+  startLevelChoice = +b.dataset.level; setLevelHeading(startLevelChoice);
   document.querySelectorAll('[data-level]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
 }));
 syncSetUI();
