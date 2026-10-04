@@ -457,7 +457,31 @@ function solids(){
   if(LEVEL === 3){
     for(const e of deptElevators) s.push(e);
     if(deptBridge && deptBridge.solid) s.push(deptBridge);
-    if(deptExit && !deptExit.open) s.push(deptExit);
+  
+  for(const h of ceilingHorses){
+    if(h.stun>0){h.stun-=dt;continue;}
+    h.x+=h.dir*42*dt;if(h.x<h.min||h.x>h.max){h.dir*=-1;h.x=Math.max(h.min,Math.min(h.max,h.x));}
+    if(Math.abs(h.x-pcx())<520){
+      h.t-=dt;
+      if(h.t<=0&&h.phase==='wait'){
+        h.phase='warn';h.t=.9;h.target=pcx();
+        horseDrops.push({kind:'paper',x:h.target,y:72,vy:130,dead:false});
+        floatText('NOTICE OF SOMETHING HEAVIER',h.target,120,C.ink);
+      }else if(h.t<=0&&h.phase==='warn'){
+        h.phase='wait';h.t=3+Math.random()*1.2;
+        horseDrops.push({kind:'stapler',x:h.target,y:78,vy:330,dead:false});
+        tone(180,.18,'square',.05,90);
+      }
+    }
+  }
+  for(const d of horseDrops){
+    d.vy+=180*dt;d.y+=d.vy*dt;
+    if(d.kind==='stapler'&&!d.dead&&ov(P,{x:d.x-15,y:d.y-10,w:30,h:22})){d.dead=true;floatText('OFFICE SUPPLY INCIDENT',d.x,d.y-22,C.ketchup);die();}
+    if(d.y>GY+45)d.dead=true;
+  }
+  horseDrops=horseDrops.filter(d=>!d.dead);
+
+  if(deptExit && !deptExit.open) s.push(deptExit);
   }
   if(LEVEL === 2){
     if(annexDoor && (!annexDoor.open || annexDoor.t < .5)) s.push(annexDoor);
@@ -507,7 +531,7 @@ let LEVEL = 1, startLevelChoice = 1;
 let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
-let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [];
+let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [];
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -608,6 +632,11 @@ function build3(){
   deptBridge={x:1840,y:GY-16,w:340,h:16,solid:false,t:0};
   deptExit={x:4510,y:GY-150,w:105,h:150,open:false,done:false};
   deptPapers=[];
+  ceilingHorses=[
+    {x:1420,min:1120,max:1720,dir:1,t:1.8,phase:'wait',stun:0,target:0},
+    {x:2680,min:2320,max:2960,dir:-1,t:2.7,phase:'wait',stun:0,target:0},
+    {x:3880,min:3500,max:4300,dir:1,t:2.1,phase:'wait',stun:0,target:0}
+  ];horseDrops=[];
   collect=[
     {t:'yawn',x:300,y:400,got:false},{t:'yawn',x:600,y:390,got:false},{t:'yawn',x:1300,y:292,got:false},
     {t:'form',x:1580,y:200,got:false,name:'Form 2-B: Permission to Be Outside Indoors'},
@@ -691,6 +720,25 @@ function drawDepartmentFront(){
     txt(d.mark||'RIVER',d.x+d.w/2,d.y-12,12,d.mark==='FORBIDDEN'?C.ketchup:C.paper,FB);
   }
   for(const p of deptPapers){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.sin(time*2+p.x)*.25);ctx.fillStyle=C.paper;ctx.fillRect(-8,-11,16,22);ctx.strokeStyle='#61736d';ctx.strokeRect(-8,-11,16,22);ctx.restore();}
+
+  for(const h of ceilingHorses){
+    ctx.save();ctx.translate(h.x,66);if(h.dir<0)ctx.scale(-1,1);
+    ctx.fillStyle=h.stun>0?'#8eaaa0':'#805b38';ctx.strokeStyle='#352418';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(0,0,35,18,0,0,7);ctx.fill();ctx.stroke();
+    ctx.fillRect(20,-10,27,11);ctx.beginPath();ctx.ellipse(49,-7,12,10,0,0,7);ctx.fill();ctx.stroke();
+    ctx.fillRect(-25,12,7,30);ctx.fillRect(15,12,7,30);
+    ctx.fillStyle='#352418';ctx.beginPath();ctx.moveTo(-31,-7);ctx.lineTo(-54,-20);ctx.lineTo(-45,1);ctx.fill();
+    ctx.fillStyle=C.paper;ctx.fillRect(-18,-15,27,12);txt(h.stun>0?'BREAK':'CEILING',-5,-6,8,C.ink,FB);
+    ctx.restore();
+    if(h.phase==='warn'){ctx.strokeStyle=C.ketchup;ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.ellipse(h.target,GY-5,34,10,0,0,7);ctx.stroke();ctx.setLineDash([]);txt('STAND ELSEWHERE',h.target,GY-22,11,C.ketchup,FB);}
+  }
+  for(const d of horseDrops){
+    ctx.save();ctx.translate(d.x,d.y);
+    if(d.kind==='paper'){ctx.rotate(Math.sin(time*5+d.x)*.25);ctx.fillStyle=C.paper;ctx.strokeStyle='#61736d';ctx.fillRect(-10,-14,20,28);ctx.strokeRect(-10,-14,20,28);txt('!',0,5,14,C.ink,FB);}
+    else{ctx.fillStyle='#b94732';ctx.strokeStyle='#492018';ctx.lineWidth=2;ctx.fillRect(-15,-10,30,20);ctx.strokeRect(-15,-10,30,20);ctx.fillStyle='#d7d7cf';ctx.fillRect(-10,-7,20,5);}
+    ctx.restore();
+  }
+
   if(deptExit){
     ctx.fillStyle=deptExit.open?'#285c48':'#5c5148';ctx.fillRect(deptExit.x,deptExit.y,deptExit.w,deptExit.h);
     ctx.fillStyle='#eee9d8';ctx.fillRect(deptExit.x+15,deptExit.y+20,75,40);txt(deptExit.open?'TUESDAY':'AUDIT',deptExit.x+52,deptExit.y+46,14,C.ink,FB);
@@ -1320,6 +1368,7 @@ function update(dt){
       }
     }
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
+    if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}}
     if(!hit){ floatText(WHISTLE_REACTIONS[reactI++ % WHISTLE_REACTIONS.length], pcx(), P.y-30, C.ink); }
   }
 
