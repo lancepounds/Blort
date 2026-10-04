@@ -458,29 +458,6 @@ function solids(){
     for(const e of deptElevators) s.push(e);
     if(deptBridge && deptBridge.solid) s.push(deptBridge);
   
-  for(const h of ceilingHorses){
-    if(h.stun>0){h.stun-=dt;continue;}
-    h.x+=h.dir*42*dt;if(h.x<h.min||h.x>h.max){h.dir*=-1;h.x=Math.max(h.min,Math.min(h.max,h.x));}
-    if(Math.abs(h.x-pcx())<520){
-      h.t-=dt;
-      if(h.t<=0&&h.phase==='wait'){
-        h.phase='warn';h.t=.9;h.target=pcx();
-        horseDrops.push({kind:'paper',x:h.target,y:72,vy:130,dead:false});
-        floatText('NOTICE OF SOMETHING HEAVIER',h.target,120,C.ink);
-      }else if(h.t<=0&&h.phase==='warn'){
-        h.phase='wait';h.t=3+Math.random()*1.2;
-        horseDrops.push({kind:'stapler',x:h.target,y:78,vy:330,dead:false});
-        tone(180,.18,'square',.05,90);
-      }
-    }
-  }
-  for(const d of horseDrops){
-    d.vy+=180*dt;d.y+=d.vy*dt;
-    if(d.kind==='stapler'&&!d.dead&&ov(P,{x:d.x-15,y:d.y-10,w:30,h:22})){d.dead=true;floatText('OFFICE SUPPLY INCIDENT',d.x,d.y-22,C.ketchup);die();}
-    if(d.y>GY+45)d.dead=true;
-  }
-  horseDrops=horseDrops.filter(d=>!d.dead);
-
   if(deptExit && !deptExit.open) s.push(deptExit);
   }
   if(LEVEL === 2){
@@ -674,6 +651,29 @@ function update3(dt){
   if(Math.random()<dt*.8) deptPapers.push({x:900+Math.random()*3300,y:-20,v:45+Math.random()*45,s:Math.random()>.5?1:-1});
   for(const p of deptPapers){p.y+=p.v*dt;p.x+=p.s*18*dt;}
   deptPapers=deptPapers.filter(p=>p.y<GY+20);
+
+  for(const h of ceilingHorses){
+    if(h.stun>0){h.stun-=dt;continue;}
+    h.x+=h.dir*42*dt;if(h.x<h.min||h.x>h.max){h.dir*=-1;h.x=Math.max(h.min,Math.min(h.max,h.x));}
+    if(Math.abs(h.x-pcx())<520){
+      h.t-=dt;
+      if(h.t<=0&&h.phase==='wait'){
+        h.phase='warn';h.t=.9;h.target=pcx();
+        horseDrops.push({kind:'paper',x:h.target,y:72,vy:130,dead:false});
+        floatText('NOTICE OF SOMETHING HEAVIER',h.target,120,C.ink);
+      }else if(h.t<=0&&h.phase==='warn'){
+        h.phase='wait';h.t=3+Math.random()*1.2;
+        horseDrops.push({kind:'stapler',x:h.target,y:78,vy:330,dead:false});
+        tone(180,.18,'square',.05,90);
+      }
+    }
+  }
+  for(const d of horseDrops){
+    d.vy+=180*dt;d.y+=d.vy*dt;
+    if(d.kind==='stapler'&&!d.dead&&ov(P,{x:d.x-15,y:d.y-10,w:30,h:22})){d.dead=true;floatText('OFFICE SUPPLY INCIDENT',d.x,d.y-22,C.ketchup);die();}
+    if(d.y>GY+45)d.dead=true;
+  }
+  horseDrops=horseDrops.filter(d=>!d.dead);
   if(deptExit && !deptExit.open && deptElevators.every(e=>e.mark==='APPROVED') && deptCabinet.mark==='FORBIDDEN'){
     deptExit.open=true;announce('OUTDOOR INDOORS INSPECTION COMPLETE. TUESDAY IS NOW ACCESSIBLE.');achieve('Filed a River Correctly');
   }
