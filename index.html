@@ -140,6 +140,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       <div class="modes" role="group" aria-label="Choose a level">
         <button class="tog" data-level="1" aria-pressed="true">1-1 Permit to Toast</button>
         <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span></button>
+        <button class="tog" data-level="3" aria-pressed="false">2-1 Outdoor Indoors<span>Office forest, leafy elevators, filing-cabinet river</span></button>
       </div>
       <div class="modes">
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
@@ -150,7 +151,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <div class="overlay" id="eggDialog" role="dialog" aria-modal="true" aria-labelledby="eggTitle" hidden><h2 id="eggTitle">Mr. Yolk, Department of Waiting</h2><p id="eggWords"></p><div class="modes"><button class="btn" id="eggHelp" type="button">Find his missing form</button><button class="btn alt" id="eggWhistle" type="button">Whistle away the hold music</button><button class="btn alt" id="eggLeave" type="button">Back to the road</button></div></div>
     <div class="overlay" id="pauseScreen" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
       <h2 id="pauseTitle">Breakfast on hold</h2>
-      <p>The game is paused. Take your time.</p>
+      <p>The game is paused. Take your time.</p><p id="pauseObjective" style="color:var(--signal);font-weight:700"></p>
       <div class="modes">
         <button class="btn" id="resumeBtn" type="button">Resume</button>
         <button class="btn alt" id="restartBtn" type="button">Restart Level</button>
@@ -427,8 +428,8 @@ function mkCrab(minX,maxX,top){ return {x:minX+30,y:top-26,w:44,h:26,minX,maxX,d
 
 function reset(full){
   if(full){
-    if(LEVEL === 2) build2(); else build();
-    deaths = 0; achievements = new Set(); hasStamp = LEVEL === 2; levelTime = 0; stampMode = 'APPROVED';
+    if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
+    deaths = 0; achievements = new Set(); hasStamp = LEVEL >= 2; levelTime = 0; stampMode = 'APPROVED';
     respawn = LEVEL === 1 ? {x:130,y:GY-40,first:true} : {x:80,y:GY-40,first:false};
   }
   cites = []; floaters = []; parts = []; rings = []; popups = popups || []; banner = null; bannerQ = [];
@@ -453,6 +454,11 @@ function solids(){
   for(const c of crabs) if(c.alive && c.frozen) s.push(c);
   if(boss.state === 'intro' || boss.state === 'fight'){ s.push({x:3700,y:0,w:20,h:GY}); s.push({x:4580,y:0,w:20,h:GY}); }
   if(LEVEL === 1 && boss.state !== 'gone' && boss.state !== 'defeated') s.push({x:4580,y:0,w:20,h:GY});
+  if(LEVEL === 3){
+    for(const e of deptElevators) s.push(e);
+    if(deptBridge && deptBridge.solid) s.push(deptBridge);
+    if(deptExit && !deptExit.open) s.push(deptExit);
+  }
   if(LEVEL === 2){
     if(annexDoor && (!annexDoor.open || annexDoor.t < .5)) s.push(annexDoor);
     for(const a of arenas){
@@ -501,6 +507,7 @@ let LEVEL = 1, startLevelChoice = 1;
 let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
+let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [];
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -572,6 +579,125 @@ function build2(){
   exit2 = {x:6500,done:false};
 }
 function mkArena(x0,x1,b){ return {x0,x1,b,state:'idle',t:0}; }
+
+function build3(){
+  LEVEL_W = 4700; clearLevel2();
+  statics = [
+    {x:0,y:GY,w:760,h:100,k:'office'},
+    {x:1020,y:GY,w:820,h:100,k:'office'},
+    {x:2180,y:GY,w:900,h:100,k:'office'},
+    {x:3420,y:GY,w:1280,h:100,k:'office'},
+    {x:1220,y:330,w:150,h:20,k:'branch'},
+    {x:1510,y:240,w:170,h:20,k:'branch'},
+    {x:2380,y:340,w:150,h:20,k:'branch'},
+    {x:2740,y:255,w:170,h:20,k:'branch'},
+    {x:3650,y:330,w:160,h:20,k:'branch'},
+    {x:3970,y:245,w:170,h:20,k:'branch'},
+    {x:-20,y:0,w:20,h:H,k:'wall'},{x:LEVEL_W,y:0,w:20,h:H,k:'wall'}
+  ];
+  gate={x:-9999,y:-9999,w:1,h:1,open:true,t:9};bridge={x:-9999,y:-9999,w:1,h:1,toasted:true,unaffected:false,tt:1};
+  stamp={x:-9999,y:-9999,got:true};lift={x:-9999,y:GY,w:1,h:1,state:'pending',top:0,mark:null};
+  barrier={x:-9999,y:-9999,w:1,h:1,down:true,t:9,mark:null};crabs=[];spoons=[];spCites=[];cones=[];cabinets=[];cites=[];
+  boss={state:'gone',hp:0,x:-9999,y:-9999,t:0,fire:0,flash:0,pending:false,droop:0};
+  exitDoor={open:false,t:0,done:false,applause:0};
+  deptElevators=[
+    {x:800,y:GY-20,w:160,h:20,base:GY-20,top:280,target:GY-20,mark:null,leaves:7},
+    {x:3100,y:GY-20,w:230,h:20,base:GY-20,top:300,target:GY-20,mark:null,leaves:10}
+  ];
+  deptCabinet={x:1845,y:GY-92,w:72,h:92,mark:null,open:false,t:0};
+  deptBridge={x:1840,y:GY-16,w:340,h:16,solid:false,t:0};
+  deptExit={x:4510,y:GY-150,w:105,h:150,open:false,done:false};
+  deptPapers=[];
+  collect=[
+    {t:'yawn',x:300,y:400,got:false},{t:'yawn',x:600,y:390,got:false},{t:'yawn',x:1300,y:292,got:false},
+    {t:'form',x:1580,y:200,got:false,name:'Form 2-B: Permission to Be Outside Indoors'},
+    {t:'yawn',x:2450,y:300,got:false},{t:'yawn',x:2800,y:215,got:false},{t:'button',x:3740,y:290,got:false},
+    {t:'form',x:4050,y:205,got:false,name:'Form TREE: Leaf Retention Notice'},
+    {t:'nothing',x:4260,y:400,got:false}
+  ];
+  checkpoints=[{x:1100,on:false},{x:2250,on:false},{x:3500,on:false}];
+  eggs=[{x:430,line:'The forest is on the third floor. Naturally.',sir:'SIR! APPROVE leafy elevators. FORBID the river cabinet, sir!'}];
+  signs=[
+    {x:120,y:330,w:180,h:55,lines:['DEPARTMENT OF','OUTDOOR INDOORS'],alt:['THE TREES HAVE','EMPLOYEE NUMBERS'],c:C.teal},
+    {x:720,y:320,w:150,h:48,lines:['LEAF ELEVATOR','STATUS: PENDING'],alt:['STAMP APPROVED','THEN STEP ABOARD'],c:C.ketchup},
+    {x:1710,y:315,w:160,h:55,lines:['RIVER CABINET','DO NOT FILE WATER'],alt:['FORBID THE CABINET','TO FILE THE RIVER'],c:C.tealDark},
+    {x:3070,y:315,w:160,h:55,lines:['CANOPY LIFT','PENDING REVIEW'],alt:['APPROVE IT. AGAIN.','CONSISTENCY!'],c:C.ketchup},
+    {x:4380,y:320,w:150,h:55,lines:['EXIT TO TUESDAY','CLOSED MONDAYS'],alt:['TODAY IS NOT','MONDAY. PROCEED.'],c:C.teal}
+  ];
+  triggers=[
+    {x:500,done:false,fn:()=>announce('WELCOME OUTDOORS. PLEASE REMAIN INSIDE THE TREES.')},
+    {x:1700,done:false,fn:()=>announce('THE RIVER HAS BEEN MISFILED UNDER: LIQUID, GENERAL.')},
+    {x:3500,done:false,fn:()=>announce('ALL LEAVES MUST CLOCK OUT BEFORE FALLING.')}
+  ];
+}
+function update3(dt){
+  for(const e of deptElevators){
+    const oldY=e.y, riding=P&&P.ground&&P.x+P.w>e.x&&P.x<e.x+e.w&&Math.abs(P.y+P.h-oldY)<8;
+    e.y += (e.target-e.y)*Math.min(1,dt*3.2);
+    if(riding) P.y+=e.y-oldY;
+    if(e.mark==='APPROVED') e.target=e.top;
+    else if(e.mark==='FORBIDDEN') e.target=e.base;
+  }
+  if(deptCabinet){
+    deptCabinet.t += (deptCabinet.open?1:-1)*dt*2;deptCabinet.t=Math.max(0,Math.min(1,deptCabinet.t));
+    deptBridge.t += ((deptBridge.solid?1:0)-deptBridge.t)*Math.min(1,dt*4);
+  }
+  if(Math.random()<dt*.8) deptPapers.push({x:900+Math.random()*3300,y:-20,v:45+Math.random()*45,s:Math.random()>.5?1:-1});
+  for(const p of deptPapers){p.y+=p.v*dt;p.x+=p.s*18*dt;}
+  deptPapers=deptPapers.filter(p=>p.y<GY+20);
+  if(deptExit && !deptExit.open && deptElevators.every(e=>e.mark==='APPROVED') && deptCabinet.mark==='FORBIDDEN'){
+    deptExit.open=true;announce('OUTDOOR INDOORS INSPECTION COMPLETE. TUESDAY IS NOW ACCESSIBLE.');achieve('Filed a River Correctly');
+  }
+  if(deptExit&&deptExit.open&&ov(P,{x:deptExit.x+25,y:GY-80,w:55,h:80})) winLevel();
+}
+function stampDepartment(A,x,y,col){
+  const e=deptElevators.find(q=>Math.abs(q.x+q.w/2-x)<reach(150)&&Math.abs(q.y-y)<150);
+  if(e){stampFx(e.x+e.w/2,e.y);e.mark=stampMode;floatText(A?'ELEVATOR APPROVED':'ELEVATOR FORBIDDEN',e.x+e.w/2,e.y-35,col);return true;}
+  if(deptCabinet&&Math.abs(deptCabinet.x+36-x)<reach(140)){
+    stampFx(deptCabinet.x+36,deptCabinet.y+35);deptCabinet.mark=stampMode;
+    if(!A){deptCabinet.open=true;deptBridge.solid=true;floatText('RIVER FILED. CROSSING AVAILABLE.',deptCabinet.x+36,deptCabinet.y-35,col);}
+    else {deptCabinet.open=false;deptBridge.solid=false;floatText('RIVER APPROVED. IT CONTINUES BEING A RIVER.',deptCabinet.x+36,deptCabinet.y-35,col);}
+    return true;
+  }
+  return false;
+}
+function drawDepartmentBack(){
+  ctx.fillStyle='#d7e5dd';ctx.fillRect(0,0,W,H);
+  for(let x=Math.floor(camX/240)*240-240;x<camX+W+240;x+=240){
+    const sx=x-camX;ctx.fillStyle='#c4d3cc';ctx.fillRect(sx,55,210,GY-55);ctx.strokeStyle='#71877d';ctx.lineWidth=3;ctx.strokeRect(sx,55,210,GY-55);
+    ctx.fillStyle='#ebf1ed';for(let y=80;y<GY-20;y+=58)ctx.fillRect(sx+18,y,174,3);
+  }
+  for(let x=Math.floor(camX/310)*310-310;x<camX+W+310;x+=310){
+    const sx=x-camX;ctx.fillStyle='#5c3922';ctx.fillRect(sx+135,125,26,GY-125);
+    ctx.fillStyle='#3b8055';for(let j=0;j<5;j++){ctx.beginPath();ctx.ellipse(sx+148+(j%2?35:-35),130+j*38,62,27,j%2?.25:-.25,0,7);ctx.fill();}
+    ctx.fillStyle='#f2f0de';ctx.fillRect(sx+118,205,60,26);txt('EMP. '+String((x/310|0)+41).padStart(3,'0'),sx+148,223,10,C.ink,FB);
+  }
+  ctx.fillStyle='#86b9d0';ctx.fillRect(1840-camX,GY-18,340,18);ctx.fillStyle='rgba(255,255,255,.5)';
+  for(let x=1845;x<2180;x+=35)ctx.fillRect(x-camX+Math.sin(time*3+x)*8,GY-14,22,3);
+}
+function drawDepartmentFront(){
+  if(deptBridge){
+    ctx.globalAlpha=deptBridge.t;ctx.fillStyle='#6d4d35';ctx.fillRect(deptBridge.x,deptBridge.y,deptBridge.w,deptBridge.h);
+    ctx.fillStyle='#d5be87';for(let x=deptBridge.x+8;x<deptBridge.x+deptBridge.w;x+=28)ctx.fillRect(x,deptBridge.y+3,18,8);ctx.globalAlpha=1;
+  }
+  for(const e of deptElevators){
+    ctx.fillStyle='#667c73';ctx.fillRect(e.x,e.y,e.w,e.h);ctx.fillStyle='#79a85d';
+    for(let i=0;i<e.leaves;i++){const x=e.x+10+(i*37)%Math.max(20,e.w-20);ctx.beginPath();ctx.ellipse(x,e.y-5-(i%3)*7,13,6,(i%2?.4:-.4),0,7);ctx.fill();}
+    txt(e.mark||'PENDING',e.x+e.w/2,e.y-24,12,e.mark==='APPROVED'?C.teal:e.mark==='FORBIDDEN'?C.ketchup:C.ink,FB);
+  }
+  if(deptCabinet){
+    const d=deptCabinet;ctx.fillStyle='#56736b';ctx.fillRect(d.x,d.y,d.w,d.h);ctx.strokeStyle='#263f38';ctx.strokeRect(d.x,d.y,d.w,d.h);
+    for(let y=d.y+12;y<d.y+75;y+=27){ctx.fillStyle='#d8e1dc';ctx.fillRect(d.x+8,y,d.w-16,19);ctx.fillStyle='#263f38';ctx.fillRect(d.x+28,y+7,16,3);}
+    txt(d.mark||'RIVER',d.x+d.w/2,d.y-12,12,d.mark==='FORBIDDEN'?C.ketchup:C.paper,FB);
+  }
+  for(const p of deptPapers){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.sin(time*2+p.x)*.25);ctx.fillStyle=C.paper;ctx.fillRect(-8,-11,16,22);ctx.strokeStyle='#61736d';ctx.strokeRect(-8,-11,16,22);ctx.restore();}
+  if(deptExit){
+    ctx.fillStyle=deptExit.open?'#285c48':'#5c5148';ctx.fillRect(deptExit.x,deptExit.y,deptExit.w,deptExit.h);
+    ctx.fillStyle='#eee9d8';ctx.fillRect(deptExit.x+15,deptExit.y+20,75,40);txt(deptExit.open?'TUESDAY':'AUDIT',deptExit.x+52,deptExit.y+46,14,C.ink,FB);
+    if(deptExit.open){ctx.fillStyle='#0d241c';ctx.fillRect(deptExit.x+25,GY-80,55,80);}
+  }
+}
+
 function activeArena(){ return arenas.find(a => a.state==='intro' || a.state==='fight'); }
 
 /* ---------- abilities ---------- */
@@ -1267,6 +1393,7 @@ function update(dt){
   // --- boss
   if(LEVEL === 1) updateBoss(dt);
   if(LEVEL === 2){ update2(dt); if(state !== 'play'){ pressed.clear(); return; } }
+  if(LEVEL === 3){ update3(dt); if(state !== 'play'){ pressed.clear(); return; } }
 
   // --- exit
   if(LEVEL === 1 && (boss.state === 'gone' || boss.state === 'defeated')){
@@ -1297,6 +1424,7 @@ function doAction(){
     if(!bridge.toasted && x > 2380 && x < 2560 && P.y > 360) floatText('You need something official.', x, P.y-30, C.ink); else salute();
     return;
   }
+  if(LEVEL === 3 && stampDepartment(A,x,y,col)) return;
   if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onStamp && a.b.onStamp(A, x, y, col)) return; }
   if(boss.state==='fight'){
     const c = cites.find(c=>!c.ret && Math.hypot(c.x-x, c.y-y) < reach(80));
@@ -1389,7 +1517,8 @@ function hurtBoss(){
 function winLevel(){
   state = 'win'; winT = 0; P.hidden = true; exitDoor.done = true;
   if(LEVEL === 1){ floatText('*thunderous applause for the big door*', 4960, 110, C.paper); achieve('Used the Actual Exit'); }
-  else { exit2.done = true; floatText('*polite applause from the Annex*', exit2.x+20, 220, C.paper); achieve('Survived the Annex'); }
+  else if(LEVEL === 2){ exit2.done = true; floatText('*polite applause from the Annex*', exit2.x+20, 220, C.paper); achieve('Survived the Annex'); }
+  else { deptExit.done=true;floatText('*the indoor forest files a rustling report*',deptExit.x,220,C.paper);achieve('Went Outside Indoors'); }
   [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.06),i*130));
 }
 function showWin(){
@@ -1399,12 +1528,13 @@ function showWin(){
     `<span>Time <b>${mm}:${ss}</b></span><span>Yawns <b>${y.filter(c=>c.got).length}/${y.length}</b></span><span>Forms <b>${f.filter(c=>c.got).length}/${f.length}</b></span>`+
     `<span>Licenses revoked <b>${deaths}</b></span><span>Loose Buttons <b>${bt.filter(c=>c.got).length}/${bt.length}</b></span><span>Certified Nothing <b>${n.got?'[&#10003;]':'[ ]'}</b></span>`+
     `<span style="grid-column:1/-1">Fake achievements <b>${achievements.size}</b></span>`;
-  document.getElementById('winTag').textContent = LEVEL === 1 ? 'Level concluded (unofficially)' : 'Annex concluded (reluctantly)';
-  document.getElementById('winTitle').textContent = LEVEL === 1 ? 'Permit Granted' : 'Annex Cleared';
-  document.getElementById('winText').textContent = LEVEL === 1 ? 'Retroactively. The End of the Beginning is in a later level. Probably.' : 'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.';
-  document.getElementById('nextBtn').hidden = LEVEL !== 1;
+  document.getElementById('winTag').textContent = LEVEL === 1 ? 'Level concluded (unofficially)' : LEVEL === 2 ? 'Annex concluded (reluctantly)' : 'Outdoor Indoors inspection complete';
+  document.getElementById('winTitle').textContent = LEVEL === 1 ? 'Permit Granted' : LEVEL === 2 ? 'Annex Cleared' : 'Outside Filed Indoors';
+  document.getElementById('winText').textContent = LEVEL === 1 ? 'Retroactively. The End of the Beginning is in a later level. Probably.' : LEVEL === 2 ? 'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.' : 'The office forest has approved your transfer to Tuesday.';
+  document.getElementById('nextBtn').hidden = LEVEL === 3;
+  document.getElementById('nextBtn').textContent = LEVEL === 1 ? 'Continue to 1-2: The Annex' : 'Continue to 2-1: Outdoor Indoors';
   document.getElementById('winScreen').hidden = false;
-  document.getElementById(LEVEL === 1 ? 'nextBtn' : 'againBtn').focus();
+  document.getElementById(LEVEL === 3 ? 'againBtn' : 'nextBtn').focus();
 }
 
 /* ---------------- drawing ---------------- */
@@ -1616,6 +1746,7 @@ function drawTile(L, factor, y, extra){
 const motes = Array.from({length:34}, (_,i)=>({x:Math.random()*W, y:Math.random()*H, s:.6+Math.random()*1.6, v:4+Math.random()*10, p:Math.random()*6}));
 
 function drawBackground(){
+  if(LEVEL === 3){drawDepartmentBack();return;}
   if(!LAY.sky) buildScenery();
   ctx.drawImage(LAY.sky.c, 0, 0, W, H);
   // sun: a sunny-side-up egg with slow rays
@@ -1639,6 +1770,7 @@ function drawBackground(){
   drawTile(LAY.near, .6, GY-150);
 }
 function drawOverlay(){
+  if(LEVEL===3){ctx.fillStyle='rgba(20,48,38,.08)';ctx.fillRect(0,0,W,H);ctx.drawImage(LAY.vig.c,0,0,W,H);return;}
   drawTile(LAY.fore, 1.35, H-90, 200);
   for(const m of motes){
     m.y -= m.v/60; m.x += Math.sin(time + m.p)*.15; if(m.y < -5){ m.y = H+5; m.x = Math.random()*W; }
@@ -1661,6 +1793,8 @@ function shadow(x, y, w){
 
 function drawGround(s){
   if(s.k==='wall' || s.k==='signtop') return;
+  if(s.k==='office'){ctx.fillStyle='#596d66';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#8aa298';ctx.fillRect(s.x,s.y,s.w,12);ctx.fillStyle='#cbd5d0';for(let x=s.x+25;x<s.x+s.w;x+=80)ctx.fillRect(x,s.y+35,42,32);return;}
+  if(s.k==='branch'){ctx.fillStyle='#5c3922';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#76a85e';for(let x=s.x+10;x<s.x+s.w;x+=30){ctx.beginPath();ctx.ellipse(x,s.y-5,18,8,.2,0,7);ctx.fill();}return;}
   pats();
   if(s.k==='toaster'){
     // two slices waiting in the slots
@@ -2207,7 +2341,7 @@ function render(){
   drawBackground();
   ctx.save(); ctx.translate(-Math.round(camX), 0);
   for(const sg of signs) drawSign(sg);
-  if(LEVEL === 1){ drawArena(); drawExit(); } else drawLevel2Back();
+  if(LEVEL === 1){ drawArena(); drawExit(); } else if(LEVEL === 2) drawLevel2Back();
   for(const s of statics) drawGround(s);
   if(LEVEL === 1){ drawForks(); drawBridge(); drawGate(); drawStamp(); drawLift(); drawBarrier(); }
   for(const cp of checkpoints) drawCheckpoint(cp);
@@ -2217,7 +2351,7 @@ function render(){
   for(const sp of spoons) drawSpoon(sp);
   drawSpCites();
   for(const c of crabs) drawCrab(c);
-  if(LEVEL === 1){ drawBoss(); drawCites(); } else drawLevel2Front();
+  if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else drawDepartmentFront();
   if(P && !P.hidden && state !== 'dead') drawStretch();
   if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, moving:Math.abs(P.vx)>20});
   for(const r of rings){
@@ -2336,6 +2470,7 @@ function togglePause(){
   if(paused){ resumeGame(); return; }
   if(state !== 'play' && state !== 'dead') return;
   paused = true; clearInput(); pauseScreen.hidden = false;
+  document.getElementById('pauseObjective').textContent = LEVEL===3 ? 'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.' : LEVEL===2 ? 'Objective: clear the Annex confrontations and reach the exit.' : 'Objective: proceed right through the Municipal Breakfast District.';
   document.getElementById('resumeBtn').focus();
 }
 pauseBtn.addEventListener('click', togglePause);
@@ -2389,11 +2524,12 @@ function startGame(mode, lvl){
   document.getElementById('winScreen').hidden = true;
   cv.focus();
   if(LEVEL === 1) announce('Welcome to the Municipal Breakfast District. Proceed right. Breakfast ends when approved.');
+  if(LEVEL === 3) announce('DEPARTMENT OF OUTDOOR INDOORS. APPROVE ELEVATORS. FORBID THE RIVER CABINET. REACH TUESDAY.');
 }
 document.getElementById('startRelaxed').addEventListener('click', () => startGame('relaxed', startLevelChoice));
 document.getElementById('startStandard').addEventListener('click', () => startGame('standard', startLevelChoice));
 document.getElementById('againBtn').addEventListener('click', () => startGame(null, LEVEL));
-document.getElementById('nextBtn').addEventListener('click', () => startGame(null, 2));
+document.getElementById('nextBtn').addEventListener('click', () => startGame(null, LEVEL === 1 ? 2 : 3));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
   startLevelChoice = +b.dataset.level;
   document.querySelectorAll('[data-level]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
