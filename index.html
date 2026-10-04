@@ -508,7 +508,7 @@ let LEVEL = 1, startLevelChoice = 1;
 let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
-let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [];
+let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [];
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -614,6 +614,10 @@ function build3(){
     {x:2680,min:2320,max:2960,dir:-1,t:2.7,phase:'wait',stun:0,target:0},
     {x:3880,min:3500,max:4300,dir:1,t:2.1,phase:'wait',stun:0,target:0}
   ];horseDrops=[];
+  loudRectangles=[
+    {x:2300,y:GY-46,w:58,h:46,min:2220,max:2750,dir:1,state:'quiet',t:1.6,stun:0,line:'SUBMIT WALKING IN TRIPLICATE!'},
+    {x:3570,y:GY-46,w:58,h:46,min:3450,max:4200,dir:-1,state:'quiet',t:2.4,stun:0,line:'FORWARD MOTION REQUIRES FORWARD MOTION!'}
+  ];
   collect=[
     {t:'yawn',x:300,y:400,got:false},{t:'yawn',x:600,y:390,got:false},{t:'yawn',x:1300,y:292,got:false},
     {t:'form',x:1580,y:200,got:false,name:'Form 2-B: Permission to Be Outside Indoors'},
@@ -651,6 +655,22 @@ function update3(dt){
   if(Math.random()<dt*.8) deptPapers.push({x:900+Math.random()*3300,y:-20,v:45+Math.random()*45,s:Math.random()>.5?1:-1});
   for(const p of deptPapers){p.y+=p.v*dt;p.x+=p.s*18*dt;}
   deptPapers=deptPapers.filter(p=>p.y<GY+20);
+
+
+  for(const r of loudRectangles){
+    if(r.stun>0){r.stun-=dt;r.state='quiet';continue;}
+    r.x+=r.dir*(r.state==='loud'?78:46)*dt;
+    if(r.x<r.min||r.x>r.max){r.dir*=-1;r.x=Math.max(r.min,Math.min(r.max,r.x));}
+    if(Math.abs(r.x-pcx())<480){
+      r.t-=dt;
+      if(r.t<=0){
+        if(r.state==='quiet'){r.state='warn';r.t=.75;tone(420,.08,'square',.025);}
+        else if(r.state==='warn'){r.state='loud';r.t=1.55;tone(150,.22,'sawtooth',.045,230);}
+        else {r.state='quiet';r.t=2.2+Math.random()*1.4;}
+      }
+    }
+    if(r.state==='loud'&&P.inv<=0&&ov(P,{x:r.x,y:r.y,w:r.w,h:r.h})){floatText('PROCEDURAL VOLUME',r.x+29,r.y-18,C.ketchup);die();}
+  }
 
   for(const h of ceilingHorses){
     if(h.stun>0){h.stun-=dt;continue;}
@@ -720,6 +740,23 @@ function drawDepartmentFront(){
     txt(d.mark||'RIVER',d.x+d.w/2,d.y-12,12,d.mark==='FORBIDDEN'?C.ketchup:C.paper,FB);
   }
   for(const p of deptPapers){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.sin(time*2+p.x)*.25);ctx.fillStyle=C.paper;ctx.fillRect(-8,-11,16,22);ctx.strokeStyle='#61736d';ctx.strokeRect(-8,-11,16,22);ctx.restore();}
+
+
+  for(const r of loudRectangles){
+    ctx.save();ctx.translate(r.x,r.y);
+    ctx.fillStyle=r.stun>0?'#81958d':r.state==='loud'?C.ketchup:r.state==='warn'?C.mustard:'#405f77';
+    ctx.strokeStyle='#1b272b';ctx.lineWidth=3;ctx.fillRect(0,0,r.w,r.h);ctx.strokeRect(0,0,r.w,r.h);
+    ctx.fillStyle=C.paper;ctx.fillRect(12,12,7,7);ctx.fillRect(38,12,7,7);
+    ctx.fillStyle='#1b272b';ctx.fillRect(18,30,22,r.state==='loud'?7:3);
+    if(r.state==='warn'){txt('!',r.w/2,-12,22,C.ketchup,FB);}
+    if(r.state==='loud'){
+      ctx.fillStyle=C.paper;ctx.strokeStyle=C.ketchup;ctx.lineWidth=2;rr(-52,-63,162,43,7);ctx.fill();ctx.stroke();
+      txt(r.line.includes('TRIPLICATE')?'SUBMIT WALKING':'FORWARD MOTION',29,-46,11,C.ink,FB);
+      txt(r.line.includes('TRIPLICATE')?'IN TRIPLICATE!':'REQUIRES ITSELF!',29,-31,11,C.ink,FB);
+    }
+    if(r.stun>0)txt('MUTED',r.w/2,-10,11,C.tealDark,FB);
+    ctx.restore();
+  }
 
   for(const h of ceilingHorses){
     ctx.save();ctx.translate(h.x,66);if(h.dir<0)ctx.scale(-1,1);
@@ -1368,7 +1405,7 @@ function update(dt){
       }
     }
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
-    if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}}
+    if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}}
     if(!hit){ floatText(WHISTLE_REACTIONS[reactI++ % WHISTLE_REACTIONS.length], pcx(), P.y-30, C.ink); }
   }
 
