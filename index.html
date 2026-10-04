@@ -508,7 +508,7 @@ let LEVEL = 1, startLevelChoice = 1;
 let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
-let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [];
+let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [], deptBoss = null, soundWaves = [];
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -608,6 +608,7 @@ function build3(){
   deptCabinet={x:1845,y:GY-92,w:72,h:92,mark:null,open:false,t:0};
   deptBridge={x:1840,y:GY-16,w:340,h:16,solid:false,t:0};
   deptExit={x:4510,y:GY-150,w:105,h:150,open:false,done:false};
+  deptBoss={x:4250,y:GY-122,w:118,h:122,hp:4,maxHp:4,state:'dormant',t:0,fire:0,flash:0}; soundWaves=[];
   deptPapers=[];
   ceilingHorses=[
     {x:1420,min:1120,max:1720,dir:1,t:1.8,phase:'wait',stun:0,target:0},
@@ -694,7 +695,24 @@ function update3(dt){
     if(d.y>GY+45)d.dead=true;
   }
   horseDrops=horseDrops.filter(d=>!d.dead);
-  if(deptExit && !deptExit.open && deptElevators.every(e=>e.mark==='APPROVED') && deptCabinet.mark==='FORBIDDEN'){
+  if(deptBoss && deptBoss.state==='dormant' && pcx()>3970){
+    deptBoss.state='warn';deptBoss.t=1.3;announce('FINAL AUDIT: THE EXECUTIVE LOUD RECTANGLE HAS DENIED QUIET.');
+  }
+  if(deptBoss && deptBoss.state!=='dormant' && deptBoss.state!=='defeated'){
+    deptBoss.t-=dt;deptBoss.flash=Math.max(0,deptBoss.flash-dt);
+    if(deptBoss.state==='warn' && deptBoss.t<=0){deptBoss.state='loud';deptBoss.t=2.8;deptBoss.fire=.15;tone(105,.35,'sawtooth',.06,210);announce('VOLUME IS NOW MANDATORY. JUMP THE SOUND WAVES.');}
+    else if(deptBoss.state==='loud'){
+      deptBoss.fire-=dt;
+      if(deptBoss.fire<=0){deptBoss.fire=.72;soundWaves.push({x:deptBoss.x+8,y:GY-36,w:26,h:36,vx:-330,dead:false},{x:deptBoss.x+deptBoss.w-34,y:GY-36,w:26,h:36,vx:330,dead:false});tone(120,.12,'square',.035,80);}
+      if(deptBoss.t<=0){deptBoss.state='quiet';deptBoss.t=2.15;announce('QUIET HOURS: WHISTLE AT THE EXECUTIVE RECTANGLE NOW.');}
+    } else if(deptBoss.state==='quiet' && deptBoss.t<=0){deptBoss.state='warn';deptBoss.t=1.15;}
+  }
+  for(const w of soundWaves){
+    w.x+=w.vx*dt;if(w.x<3850||w.x>4490)w.dead=true;
+    if(!w.dead&&P.inv<=0&&ov(P,w)){w.dead=true;if(SET.nofail){P.vy=-420;P.inv=.9;floatText('VOLUME ADJUSTMENT',pcx(),P.y-20,C.ketchup);}else die();}
+  }
+  soundWaves=soundWaves.filter(w=>!w.dead);
+  if(deptExit && !deptExit.open && deptElevators.every(e=>e.mark==='APPROVED') && deptCabinet.mark==='FORBIDDEN' && deptBoss && deptBoss.state==='defeated'){
     deptExit.open=true;announce('OUTDOOR INDOORS INSPECTION COMPLETE. TUESDAY IS NOW ACCESSIBLE.');achieve('Filed a River Correctly');
   }
   if(deptExit&&deptExit.open&&ov(P,{x:deptExit.x+25,y:GY-80,w:55,h:80})) winLevel();
@@ -756,6 +774,23 @@ function drawDepartmentFront(){
     }
     if(r.stun>0)txt('MUTED',r.w/2,-10,11,C.tealDark,FB);
     ctx.restore();
+  }
+
+  for(const w of soundWaves){
+    ctx.fillStyle='rgba(224,83,58,.28)';ctx.strokeStyle=C.ketchup;ctx.lineWidth=3;
+    ctx.fillRect(w.x,w.y,w.w,w.h);ctx.strokeRect(w.x,w.y,w.w,w.h);txt('!',w.x+w.w/2,w.y+24,18,C.paper,FB);
+  }
+  if(deptBoss && deptBoss.state!=='dormant'){
+    const b=deptBoss;ctx.save();ctx.translate(b.x,b.y);
+    if(b.state==='defeated'){ctx.globalAlpha=.5;ctx.translate(0,102);ctx.scale(1,.18);}
+    ctx.fillStyle=b.flash>0?C.paper:b.state==='loud'?C.ketchup:b.state==='warn'?C.mustard:b.state==='quiet'?C.teal:'#405f77';
+    ctx.strokeStyle='#1b272b';ctx.lineWidth=5;ctx.fillRect(0,0,b.w,b.h);ctx.strokeRect(0,0,b.w,b.h);
+    ctx.fillStyle=C.paper;ctx.fillRect(23,24,13,13);ctx.fillRect(81,24,13,13);ctx.fillStyle='#1b272b';ctx.fillRect(30,68,58,b.state==='loud'?18:7);
+    if(b.state==='warn')txt('!',b.w/2,-18,30,C.ketchup,FB);
+    if(b.state==='quiet')txt('QUIET HOURS — WHISTLE!',b.w/2,-18,14,C.tealDark,FB);
+    if(b.state==='loud'){ctx.fillStyle=C.paper;ctx.strokeStyle=C.ketchup;rr(-65,-70,248,48,7);ctx.fill();ctx.stroke();txt('ALL SILENCE MUST BE AUDIBLE!',b.w/2,-42,12,C.ink,FB);}
+    ctx.restore();
+    if(b.state!=='defeated'){ctx.fillStyle='#1b272b';ctx.fillRect(b.x,b.y-38,b.w,12);ctx.fillStyle=C.ketchup;ctx.fillRect(b.x+2,b.y-36,(b.w-4)*(b.hp/b.maxHp),8);txt('EXECUTIVE VOLUME',b.x+b.w/2,b.y-47,11,C.paper,FB);}
   }
 
   for(const h of ceilingHorses){
@@ -1405,7 +1440,13 @@ function update(dt){
       }
     }
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
-    if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}}
+    if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}
+      if(deptBoss&&deptBoss.state==='quiet'&&Math.abs(deptBoss.x+deptBoss.w/2-pcx())<reach(330)){
+        hit=true;deptBoss.hp--;deptBoss.flash=.35;soundWaves=[];stampFx(deptBoss.x+deptBoss.w/2,deptBoss.y+40);
+        if(deptBoss.hp<=0){deptBoss.state='defeated';burst(deptBoss.x+59,deptBoss.y+50,34,[C.ketchup,C.paper,C.mustard],240);floatText('VOLUME PERMIT REVOKED',deptBoss.x+59,deptBoss.y-25,C.tealDark);announce('THE EXECUTIVE RECTANGLE HAS BEEN REDUCED TO A REASONABLE FONT SIZE.');achieve('Observed Quiet Hours');}
+        else{deptBoss.state='warn';deptBoss.t=1.25;floatText('QUIET HOURS ENFORCED · '+deptBoss.hp+' LEFT',deptBoss.x+59,deptBoss.y-22,C.tealDark);}
+      }
+    }
     if(!hit){ floatText(WHISTLE_REACTIONS[reactI++ % WHISTLE_REACTIONS.length], pcx(), P.y-30, C.ink); }
   }
 
