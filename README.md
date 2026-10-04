@@ -19,7 +19,7 @@ Once GitHub Pages is turned on for this repository, the game is also playable at
 |---|---|
 | **1-1 Permit to Toast** | The Municipal Breakfast District. Whistle Blast, the two-ink Official Stamp, the Apology Crab, Deputy Spoons, and the mini-boss Deputy Spoon Prime. |
 | **1-2 The Annex of Unnecessary Confrontations** | Sock Stretch, Emergency Pocket, and four mini-bosses: Baron von Lint, Chairman Waffle, General Crumb, and Form 1040-Ω. |
-| **2-1 The Department of Outdoor Indoors** | A forest inside an office building. Approve leafy elevators, forbid a filing cabinet to file its river, dodge Ceiling Horses and their falling office supplies, silence Loud Rectangles while they shout procedural instructions, and exit into Tuesday. |
+| **2-1 The Department of Outdoor Indoors** | A forest inside an office building. Approve leafy elevators, forbid a filing cabinet to file its river, dodge Ceiling Horses and their falling office supplies, silence Loud Rectangles while they shout procedural instructions, defeat the Executive Loud Rectangle during Quiet Hours, and exit into Tuesday. |
 
 ## Controls
 
