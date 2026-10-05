@@ -856,6 +856,8 @@ function drawDepartmentFront(){
 
   for(const r of loudRectangles){
     ctx.save();ctx.translate(r.x,r.y);
+    const shout=r.state==='loud'?Math.sin(time*42)*3:0,breathe=r.state==='warn'?1+Math.sin(time*11)*.045:1;
+    ctx.translate(shout,0);ctx.scale(breathe,r.state==='loud'?1+Math.sin(time*28)*.055:1);
     ctx.fillStyle=r.stun>0?'#81958d':r.state==='loud'?C.ketchup:r.state==='warn'?C.mustard:'#405f77';
     ctx.strokeStyle='#1b272b';ctx.lineWidth=3;ctx.fillRect(0,0,r.w,r.h);ctx.strokeRect(0,0,r.w,r.h);
     ctx.fillStyle=C.paper;ctx.fillRect(12,12,7,7);ctx.fillRect(38,12,7,7);
@@ -866,7 +868,10 @@ function drawDepartmentFront(){
       txt(r.line.includes('TRIPLICATE')?'SUBMIT WALKING':'FORWARD MOTION',29,-46,11,C.ink,FB);
       txt(r.line.includes('TRIPLICATE')?'IN TRIPLICATE!':'REQUIRES ITSELF!',29,-31,11,C.ink,FB);
     }
-    if(r.stun>0)txt('MUTED',r.w/2,-10,11,C.tealDark,FB);
+    if(r.stun>0){
+      txt('MUTED',r.w/2,-10,11,C.tealDark,FB);
+      ctx.fillStyle=C.mustard;for(let i=0;i<3;i++){const a=time*3+i*2.1;txt('✦',r.w/2+Math.cos(a)*34,-4+Math.sin(a)*16,12,C.mustard,FB);}
+    }
     ctx.restore();
   }
 
@@ -876,6 +881,9 @@ function drawDepartmentFront(){
   }
   if(deptBoss && deptBoss.state!=='dormant'){
     const b=deptBoss;ctx.save();ctx.translate(b.x,b.y);
+    if(b.state==='loud')ctx.translate(Math.sin(time*55)*5,Math.cos(time*38)*2);
+    if(b.state==='warn'){const pulse=1+Math.sin(time*10)*.035;ctx.translate(b.w/2,b.h);ctx.scale(pulse,1/pulse);ctx.translate(-b.w/2,-b.h);}
+    if(b.state==='quiet')ctx.rotate(Math.sin(time*4)*.018);
     if(b.state==='defeated'){ctx.globalAlpha=.5;ctx.translate(0,102);ctx.scale(1,.18);}
     ctx.fillStyle=b.flash>0?C.paper:b.state==='loud'?C.ketchup:b.state==='warn'?C.mustard:b.state==='quiet'?C.teal:'#405f77';
     ctx.strokeStyle='#1b272b';ctx.lineWidth=5;ctx.fillRect(0,0,b.w,b.h);ctx.strokeRect(0,0,b.w,b.h);
@@ -888,11 +896,11 @@ function drawDepartmentFront(){
   }
 
   for(const h of ceilingHorses){
-    ctx.save();ctx.translate(h.x,66);if(h.dir<0)ctx.scale(-1,1);
+    ctx.save();ctx.translate(h.x,66+Math.sin(time*8+h.x)*3);if(h.dir<0)ctx.scale(-1,1);
     ctx.fillStyle=h.stun>0?'#8eaaa0':'#805b38';ctx.strokeStyle='#352418';ctx.lineWidth=2;
     ctx.beginPath();ctx.ellipse(0,0,35,18,0,0,7);ctx.fill();ctx.stroke();
     ctx.fillRect(20,-10,27,11);ctx.beginPath();ctx.ellipse(49,-7,12,10,0,0,7);ctx.fill();ctx.stroke();
-    ctx.fillRect(-25,12,7,30);ctx.fillRect(15,12,7,30);
+    const gallop=Math.sin(time*14+h.x)*7;ctx.save();ctx.translate(-21,12);ctx.rotate(gallop*.018);ctx.fillRect(-4,0,7,30);ctx.restore();ctx.save();ctx.translate(19,12);ctx.rotate(-gallop*.018);ctx.fillRect(-4,0,7,30);ctx.restore();
     ctx.fillStyle='#352418';ctx.beginPath();ctx.moveTo(-31,-7);ctx.lineTo(-54,-20);ctx.lineTo(-45,1);ctx.fill();
     ctx.fillStyle=C.paper;ctx.fillRect(-18,-15,27,12);txt(h.stun>0?'BREAK':'CEILING',-5,-6,8,C.ink,FB);
     ctx.restore();
@@ -2083,10 +2091,12 @@ function drawSign(sg){
 function drawGumbo(x,y,face,opts){
   shadow(x, y, 16);
   ctx.save(); ctx.translate(x,y); // x center, y bottom
-  let sx=1, sy=1;
-  if(opts.land>0){ sx=1.18; sy=.84; } else if(!opts.ground){ sx=.9; sy=1.1; }
-  else if(opts.moving){ sy = 1 + Math.sin(time*18)*.04; sx = 2 - sy; }
-  ctx.scale(face*sx, sy);
+  let sx=1, sy=1, tilt=0, hop=0;
+  if(opts.land>0){ sx=1.24; sy=.78; hop=3; }
+  else if(!opts.ground){ sx=.88; sy=1.13; tilt=Math.max(-.15,Math.min(.15,(P&&P.vy||0)/2600)); }
+  else if(opts.moving){ const stride=Math.sin(time*20);sy=1+stride*.065;sx=2-sy;hop=-Math.abs(stride)*2;tilt=.07; }
+  if(opts.whistle>0){sx*=1.08;sy*=.94;tilt=-.09;}
+  ctx.translate(0,hop);ctx.rotate(tilt);ctx.scale(face*sx, sy);
   const body = ctx.createLinearGradient(-12,0,24,0); body.addColorStop(0,'#ffd75a'); body.addColorStop(.55,'#ecb01c'); body.addColorStop(1,'#c4870a');
   ctx.fillStyle = body; ctx.strokeStyle = '#3a240c'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
   // sock: one continuous outline (leg + foot)
@@ -2125,10 +2135,19 @@ function drawGumbo(x,y,face,opts){
     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(2.3,-26,.8,0,7); ctx.arc(10.3,-26,.8,0,7); ctx.fill();
   }
   ctx.fillStyle = 'rgba(230,90,60,.35)'; ctx.beginPath(); ctx.ellipse(-3,-19,3,2,0,0,7); ctx.ellipse(10,-19,3,2,0,0,7); ctx.fill();
-  // arm
+  // arm: a readable pose for salute/stamp, whistle, and running.
   ctx.strokeStyle = '#3a240c'; ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.beginPath();
-  if(opts.salute>0){ ctx.moveTo(8,-30); ctx.lineTo(14,-40); ctx.lineTo(9,-48); } else { ctx.moveTo(8,-22); ctx.lineTo(16,-16 + Math.sin(time*12)*(opts.moving?3:0)); }
-  ctx.stroke(); ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+  if(opts.salute>0){ctx.moveTo(8,-30);ctx.lineTo(15,-40);ctx.lineTo(9,-49);}
+  else if(opts.whistle>0){ctx.moveTo(8,-22);ctx.lineTo(16,-31);ctx.lineTo(12,-39);}
+  else{const swing=opts.moving?Math.sin(time*20)*7:0;ctx.moveTo(8,-22);ctx.lineTo(16,-16+swing);}
+  ctx.stroke();
+  if(opts.moving&&opts.ground){ctx.strokeStyle='rgba(58,36,12,.55)';ctx.lineWidth=1.5;for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(-18-i*6,-8-i*7);ctx.lineTo(-27-i*7,-8-i*7);ctx.stroke();}}
+  if(opts.whistle>0){
+    const pulse=1+Math.sin(time*28)*.12;ctx.strokeStyle=C.tealDark;ctx.lineWidth=2;
+    for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(18,-46,(9+i*6)*pulse,-.75,.75);ctx.stroke();}
+    ctx.save();ctx.scale(face,1);txt('♪',31,-55,15,C.tealDark,FD);ctx.restore();
+  }
+  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
   ctx.restore();
 }
 
@@ -2582,7 +2601,7 @@ function render(){
   for(const c of crabs) drawCrab(c);
   if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else drawDepartmentFront();
   if(P && !P.hidden && state !== 'dead') drawStretch();
-  if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, moving:Math.abs(P.vx)>20});
+  if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, whistle:P.wcd, moving:Math.abs(P.vx)>20});
   for(const r of rings){
     const a = Math.max(0, .7 - r.t*1.5);
     ctx.strokeStyle = `rgba(255,250,230,${a})`; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(r.x, r.y, 20 + r.t*360, 0, 7); ctx.stroke();
