@@ -57,3 +57,10 @@ This is a vertical slice built from the BLORT Planned Unit / Game Development Do
 
 - Single file: `index.html` (HTML, CSS and JavaScript, drawn on a canvas).
 - No build step and no dependencies. Fonts load from Google Fonts with system fallbacks.
+
+## Playable worlds
+
+- 1-1 Permit to Toast — Municipal Breakfast District
+- 1-2 The Annex — four unnecessary confrontations
+- 2-1 Outdoor Indoors — office forest and filing-cabinet river
+- 3-1 Tuesday — whistle three clocks past lunch, evade impatient clouds, and locate Wednesday
