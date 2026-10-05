@@ -1608,7 +1608,7 @@ function update(dt){
   for(const r of rings){ r.t += dt; } rings = rings.filter(r=>r.t<.45);
 
   if(state === 'dead'){ deadT -= dt; if(deadT <= 0){ state='play'; spawnPlayer(); } pressed.clear(); return; }
-  if(state === 'win'){ winT += dt; exitDoor.applause += dt; if(Math.random()<.5) burst((LEVEL===1?4960:exit2.x+20)+Math.random()*80-40, (LEVEL===1?150:280)+Math.random()*60, 2, [C.mustard,C.ketchup,C.teal,C.paper], 140); if(winT > 2.6 && document.getElementById('winScreen').hidden) showWin(); pressed.clear(); return; }
+  if(state === 'win'){ winT += dt; exitDoor.applause += dt; if(Math.random()<.5){const wx=LEVEL===1?4960:LEVEL===2?exit2.x+20:LEVEL===3?deptExit.x:tuesdayExit.x;burst(wx+Math.random()*80-40,(LEVEL===1?150:280)+Math.random()*60,2,[C.mustard,C.ketchup,C.teal,C.paper],140);} if(winT > 2.6 && document.getElementById('winScreen').hidden) showWin(); pressed.clear(); return; }
   if(state !== 'play'){ pressed.clear(); return; }
   updateEggQuest();
 
