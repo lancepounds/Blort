@@ -729,18 +729,66 @@ function stampDepartment(A,x,y,col){
   return false;
 }
 function drawDepartmentBack(){
-  ctx.fillStyle='#d7e5dd';ctx.fillRect(0,0,W,H);
+  // Outdoor Indoors now reads as a deep office atrium instead of one flat wall.
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#aecbc2');sky.addColorStop(.58,'#dce8df');sky.addColorStop(1,'#91aa9f');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+
+  // Far glass offices move slowly for parallax depth.
+  const far=-((camX*.18)%260)-260;
+  for(let sx=far;sx<W+260;sx+=260){
+    ctx.fillStyle='rgba(70,108,102,.16)';ctx.fillRect(sx,82,220,GY-82);
+    ctx.strokeStyle='rgba(44,79,73,.28)';ctx.lineWidth=2;ctx.strokeRect(sx,82,220,GY-82);
+    ctx.fillStyle='rgba(241,246,224,.42)';
+    for(let y=108;y<GY-35;y+=72)for(let x=18;x<202;x+=62)ctx.fillRect(sx+x,y,42,28);
+  }
+
+  // Suspended office ceiling, fluorescent fixtures, and hanging vines.
+  ctx.fillStyle='#425d56';ctx.fillRect(0,0,W,46);ctx.strokeStyle='#789187';ctx.lineWidth=2;
+  const ceilingShift=-((camX*.3)%160);
+  for(let x=ceilingShift;x<W+160;x+=160){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,46);ctx.stroke();
+    ctx.fillStyle='rgba(255,250,196,.82)';ctx.fillRect(x+28,16,92,12);ctx.fillStyle='rgba(255,255,255,.45)';ctx.fillRect(x+34,18,80,3);
+    const sway=Math.sin(time*1.3+x*.02)*5;ctx.strokeStyle='#315b45';ctx.beginPath();ctx.moveTo(x+138,45);ctx.bezierCurveTo(x+130+sway,72,x+150-sway,94,x+137+sway,122);ctx.stroke();
+    ctx.fillStyle='#4f8b5a';for(let j=0;j<4;j++){ctx.beginPath();ctx.ellipse(x+140+(j%2?8:-8)+sway*(j/4),66+j*15,13,6,j%2?.55:-.55,0,7);ctx.fill();}
+  }
+
+  // Glass partitions and cubicle mullions in the middle plane.
   for(let x=Math.floor(camX/240)*240-240;x<camX+W+240;x+=240){
-    const sx=x-camX;ctx.fillStyle='#c4d3cc';ctx.fillRect(sx,55,210,GY-55);ctx.strokeStyle='#71877d';ctx.lineWidth=3;ctx.strokeRect(sx,55,210,GY-55);
-    ctx.fillStyle='#ebf1ed';for(let y=80;y<GY-20;y+=58)ctx.fillRect(sx+18,y,174,3);
+    const sx=x-camX;const glass=ctx.createLinearGradient(sx,55,sx+210,GY);glass.addColorStop(0,'rgba(237,246,239,.72)');glass.addColorStop(.55,'rgba(178,204,194,.58)');glass.addColorStop(1,'rgba(120,155,145,.5)');
+    ctx.fillStyle=glass;ctx.fillRect(sx,55,210,GY-55);ctx.strokeStyle='#71877d';ctx.lineWidth=3;ctx.strokeRect(sx,55,210,GY-55);
+    ctx.fillStyle='rgba(255,255,255,.58)';ctx.fillRect(sx+14,68,5,GY-96);ctx.fillRect(sx+22,77,102,3);
+    ctx.fillStyle='rgba(64,89,82,.23)';for(let y=136;y<GY-20;y+=72)ctx.fillRect(sx+18,y,174,3);
   }
+
+  // Layered employee trees: shadow canopy, trunk, leaves, highlights and badges.
   for(let x=Math.floor(camX/310)*310-310;x<camX+W+310;x+=310){
-    const sx=x-camX;ctx.fillStyle='#5c3922';ctx.fillRect(sx+135,125,26,GY-125);
-    ctx.fillStyle='#3b8055';for(let j=0;j<5;j++){ctx.beginPath();ctx.ellipse(sx+148+(j%2?35:-35),130+j*38,62,27,j%2?.25:-.25,0,7);ctx.fill();}
-    ctx.fillStyle='#f2f0de';ctx.fillRect(sx+118,205,60,26);txt('EMP. '+String((x/310|0)+41).padStart(3,'0'),sx+148,223,10,C.ink,FB);
+    const sx=x-camX,bob=Math.sin(time*.7+x*.013)*2;
+    ctx.fillStyle='rgba(28,65,43,.16)';ctx.beginPath();ctx.ellipse(sx+148,GY-5,82,13,0,0,7);ctx.fill();
+    const trunk=ctx.createLinearGradient(sx+132,0,sx+162,0);trunk.addColorStop(0,'#3e271b');trunk.addColorStop(.5,'#795036');trunk.addColorStop(1,'#442b1c');ctx.fillStyle=trunk;ctx.fillRect(sx+134,120,29,GY-120);
+    ctx.strokeStyle='#513321';ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(sx+148,210);ctx.lineTo(sx+105,168);ctx.moveTo(sx+150,185);ctx.lineTo(sx+193,143);ctx.stroke();
+    for(let j=0;j<6;j++){
+      const lx=sx+148+(j%2?40:-40)+(j===5?38:0),ly=122+j*34+bob;
+      ctx.fillStyle=j%3===0?'#285f43':j%3===1?'#3d7c51':'#4c925d';ctx.beginPath();ctx.ellipse(lx,ly,66-j*2,28,j%2?.22:-.22,0,7);ctx.fill();
+      ctx.fillStyle='rgba(174,216,132,.28)';ctx.beginPath();ctx.ellipse(lx-14,ly-7,28,8,j%2?.22:-.22,0,7);ctx.fill();
+    }
+    ctx.fillStyle='#f5f0d8';ctx.strokeStyle='#6f786f';ctx.lineWidth=1;ctx.fillRect(sx+112,204,72,29);ctx.strokeRect(sx+112,204,72,29);
+    txt('EMP. '+String((x/310|0)+41).padStart(3,'0'),sx+148,223,10,C.ink,FB);
   }
-  ctx.fillStyle='#86b9d0';ctx.fillRect(1840-camX,GY-18,340,18);ctx.fillStyle='rgba(255,255,255,.5)';
-  for(let x=1845;x<2180;x+=35)ctx.fillRect(x-camX+Math.sin(time*3+x)*8,GY-14,22,3);
+
+  // Filing-cabinet river with reflections and animated paper boats.
+  const river=ctx.createLinearGradient(0,GY-32,0,GY);river.addColorStop(0,'#5d94a5');river.addColorStop(1,'#214f5b');ctx.fillStyle=river;ctx.fillRect(1840-camX,GY-26,340,26);
+  ctx.strokeStyle='rgba(225,249,246,.62)';ctx.lineWidth=2;
+  for(let x=1848;x<2178;x+=42){ctx.beginPath();ctx.moveTo(x-camX,GY-18);ctx.quadraticCurveTo(x+18-camX+Math.sin(time*3+x)*7,GY-25,x+34-camX,GY-17);ctx.stroke();}
+  for(let i=0;i<3;i++){const bx=1870+((time*35+i*108)%290)-camX;ctx.fillStyle=C.paper;ctx.beginPath();ctx.moveTo(bx,GY-31);ctx.lineTo(bx+15,GY-31);ctx.lineTo(bx+8,GY-23);ctx.closePath();ctx.fill();}
+
+  // The final audit has a unique acoustic-panel backdrop and warning lamps.
+  const ax=3970-camX;if(ax<W&&ax+520>0){
+    ctx.fillStyle='rgba(27,51,49,.9)';ctx.fillRect(ax,58,520,GY-58);
+    for(let x=0;x<520;x+=54){ctx.fillStyle=x%108?'#31534e':'#3d615a';ctx.fillRect(ax+x+4,86,46,230);}
+    ctx.fillStyle='#ece5ce';ctx.fillRect(ax+112,76,296,50);ctx.strokeStyle=C.ketchup;ctx.lineWidth=4;ctx.strokeRect(ax+112,76,296,50);txt('FINAL QUIET REVIEW',ax+260,108,20,C.ink,FB);
+    for(const lx of [ax+48,ax+472]){const on=Math.sin(time*7)>0;ctx.fillStyle=on?C.ketchup:'#63382f';ctx.beginPath();ctx.arc(lx,75,12,0,7);ctx.fill();ctx.fillStyle='rgba(224,83,58,.16)';ctx.beginPath();ctx.arc(lx,75,28,0,7);ctx.fill();}
+  }
+
+  // Soft shafts of warm office light tie the layers together.
+  ctx.fillStyle='rgba(255,244,186,.07)';for(let x=-100-((camX*.12)%300);x<W+200;x+=300){ctx.beginPath();ctx.moveTo(x,46);ctx.lineTo(x+110,46);ctx.lineTo(x+200,GY);ctx.lineTo(x-35,GY);ctx.closePath();ctx.fill();}
 }
 function drawDepartmentFront(){
   if(deptBridge){
@@ -1920,7 +1968,15 @@ function shadow(x, y, w){
 
 function drawGround(s){
   if(s.k==='wall' || s.k==='signtop') return;
-  if(s.k==='office'){ctx.fillStyle='#596d66';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#8aa298';ctx.fillRect(s.x,s.y,s.w,12);ctx.fillStyle='#cbd5d0';for(let x=s.x+25;x<s.x+s.w;x+=80)ctx.fillRect(x,s.y+35,42,32);return;}
+  if(s.k==='office'){
+    const floor=ctx.createLinearGradient(0,s.y,0,s.y+s.h);floor.addColorStop(0,'#789087');floor.addColorStop(.16,'#536c64');floor.addColorStop(1,'#263f39');ctx.fillStyle=floor;ctx.fillRect(s.x,s.y,s.w,s.h);
+    ctx.fillStyle='#a8bdb4';ctx.fillRect(s.x,s.y,s.w,7);ctx.fillStyle='#314c45';ctx.fillRect(s.x,s.y+12,s.w,5);
+    ctx.strokeStyle='rgba(210,226,218,.22)';ctx.lineWidth=1;
+    for(let x=Math.ceil(s.x/64)*64;x<s.x+s.w;x+=64){ctx.beginPath();ctx.moveTo(x,s.y+17);ctx.lineTo(x,s.y+s.h);ctx.stroke();}
+    ctx.fillStyle='#cbd5d0';for(let x=s.x+24;x<s.x+s.w;x+=96){ctx.fillRect(x,s.y+35,48,30);ctx.fillStyle='#8ba096';ctx.fillRect(x+5,s.y+40,38,3);ctx.fillStyle='#cbd5d0';}
+    ctx.fillStyle='#386449';for(let x=s.x+70;x<s.x+s.w;x+=230){ctx.beginPath();ctx.ellipse(x,s.y+3,38,7,0,0,7);ctx.fill();ctx.fillStyle='#579063';for(let j=0;j<3;j++){ctx.beginPath();ctx.ellipse(x-18+j*18,s.y-5-(j%2)*7,17,7,j%2?.5:-.5,0,7);ctx.fill();}ctx.fillStyle='#386449';}
+    return;
+  }
   if(s.k==='branch'){ctx.fillStyle='#5c3922';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#76a85e';for(let x=s.x+10;x<s.x+s.w;x+=30){ctx.beginPath();ctx.ellipse(x,s.y-5,18,8,.2,0,7);ctx.fill();}return;}
   pats();
   if(s.k==='toaster'){
