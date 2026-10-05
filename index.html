@@ -802,8 +802,6 @@ function drawDepartmentFront(){
   for(const d of districts){
     ctx.fillStyle='rgba(24,55,48,.12)';ctx.fillRect(d.x,GY-10,d.w,10);
     ctx.strokeStyle='rgba(44,83,71,.48)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(d.x+28,GY);ctx.lineTo(d.x+28,118);ctx.quadraticCurveTo(d.x+d.w/2,58,d.x+d.w-28,118);ctx.lineTo(d.x+d.w-28,GY);ctx.stroke();
-    ctx.fillStyle=d.c;rr(d.x+d.w/2-142,91,284,55,8);ctx.fill();ctx.strokeStyle=C.paper;ctx.lineWidth=2;rr(d.x+d.w/2-137,96,274,45,5);ctx.stroke();
-    txt(d.name,d.x+d.w/2,113,15,C.paper,FB);txt(d.sub,d.x+d.w/2,132,9,'#e4ecd9',FB);
   }
 
   // Glass greenhouse ribs, vents, and irrigation pipes turn the office into a habitat.
@@ -917,6 +915,20 @@ function drawDepartmentFront(){
     ctx.fillStyle=deptExit.open?'#285c48':'#5c5148';ctx.fillRect(deptExit.x,deptExit.y,deptExit.w,deptExit.h);
     ctx.fillStyle='#eee9d8';ctx.fillRect(deptExit.x+15,deptExit.y+20,75,40);txt(deptExit.open?'TUESDAY':'AUDIT',deptExit.x+52,deptExit.y+46,14,C.ink,FB);
     if(deptExit.open){ctx.fillStyle='#0d241c';ctx.fillRect(deptExit.x+25,GY-80,55,80);}
+  }
+}
+function drawDepartmentLabels(){
+  const districts=[
+    {x:80,w:650,name:'RECEPTION GROVE',sub:'VISITORS MUST PHOTOSYNTHESIZE',c:'#3f7c61'},
+    {x:1080,w:700,name:'HUMAN BRANCHES',sub:'ORIENTATION · FLOOR 3',c:'#6d7f49'},
+    {x:2220,w:760,name:'CANOPY OPERATIONS',sub:'LEAVES CLOCK IN HERE',c:'#3f756b'},
+    {x:3440,w:540,name:'ACOUSTIC ARBORETUM',sub:'INDOOR VOICES GROW OUTDOORS',c:'#805f3d'}
+  ];
+  for(const d of districts){
+    const x=d.x+d.w/2-142,y=72;
+    ctx.fillStyle='rgba(15,43,41,.78)';rr(x-5,y-5,294,65,10);ctx.fill();
+    ctx.fillStyle=d.c;rr(x,y,284,55,8);ctx.fill();ctx.strokeStyle=C.paper;ctx.lineWidth=2;rr(x+5,y+5,274,45,5);ctx.stroke();
+    txt(d.name,d.x+d.w/2,y+22,15,C.paper,FB);txt(d.sub,d.x+d.w/2,y+41,9,'#f4f0dc',FB);
   }
 }
 
@@ -2588,7 +2600,7 @@ function render(){
   solidsCache = solids();
   drawBackground();
   ctx.save(); ctx.translate(-Math.round(camX), 0);
-  for(const sg of signs) drawSign(sg);
+  if(LEVEL !== 3) for(const sg of signs) drawSign(sg);
   if(LEVEL === 1){ drawArena(); drawExit(); } else if(LEVEL === 2) drawLevel2Back();
   for(const s of statics) drawGround(s);
   if(LEVEL === 1){ drawForks(); drawBridge(); drawGate(); drawStamp(); drawLift(); drawBarrier(); }
@@ -2600,6 +2612,7 @@ function render(){
   drawSpCites();
   for(const c of crabs) drawCrab(c);
   if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else drawDepartmentFront();
+  if(LEVEL === 3){for(const sg of signs) drawSign(sg);drawDepartmentLabels();}
   if(P && !P.hidden && state !== 'dead') drawStretch();
   if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, whistle:P.wcd, moving:Math.abs(P.vx)>20});
   for(const r of rings){
