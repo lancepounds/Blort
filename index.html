@@ -429,6 +429,7 @@ function mkCrab(minX,maxX,top){ return {x:minX+30,y:top-26,w:44,h:26,minX,maxX,d
 function reset(full){
   if(full){
     if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
+    buildEnvironment(LEVEL);
     deaths = 0; achievements = new Set(); hasStamp = LEVEL >= 2; levelTime = 0; stampMode = 'APPROVED';
     respawn = LEVEL === 1 ? {x:130,y:GY-40,first:true} : {x:80,y:GY-40,first:false};
   }
@@ -508,7 +509,7 @@ let LEVEL = 1, startLevelChoice = 1;
 let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
-let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [], deptBoss = null, soundWaves = [];
+let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [], deptBoss = null, soundWaves = [], environmentProps = [];
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -728,6 +729,84 @@ function stampDepartment(A,x,y,col){
   }
   return false;
 }
+
+/* ---------- shared environmental interactions ---------- */
+function buildEnvironment(level){
+  const p=(type,x,extra={})=>Object.assign({type,x,y:GY,t:0,vx:0,open:false,mark:null,cool:0},extra);
+  environmentProps=level===1?[
+    p('vent',1360,{label:'BREAKFAST EXHAUST'}),p('drawer',2260,{label:'CRUMB ARCHIVE'}),
+    p('chair',3380,{min:3280,max:3540,label:'CEREMONIAL SEATING'}),p('shrub',4320,{label:'TOAST HEDGE'})
+  ]:level===2?[
+    p('vent',880,{label:'ANNEX AIR'}),p('chair',2670,{min:2570,max:2900,label:'MEETING CHAIR'}),
+    p('drawer',4120,{label:'UNNECESSARY FILES'}),p('shrub',5320,{label:'PAPER FERN'})
+  ]:[
+    p('shrub',570,{label:'EMPLOYEE SHRUB'}),p('vent',1540,{label:'CANOPY VENT'}),
+    p('drawer',2440,{label:'LEAF RECORDS'}),p('chair',3650,{min:3520,max:3890,label:'ROLLING REVIEW'})
+  ];
+}
+function nearbyEnvironment(range=130){return environmentProps.find(q=>Math.abs(q.x-pcx())<reach(range)&&Math.abs((q.y-25)-pcy())<150);}
+function environmentWhistle(){
+  let hit=false;
+  for(const q of environmentProps){
+    if(Math.abs(q.x-pcx())>reach(280))continue;
+    hit=true;
+    if(q.type==='vent'){q.t=2.5;floatText('AUTHORIZED UPDRAFT',q.x,q.y-58,C.tealDark);tone(520,.22,'sine',.035,900);}
+    else if(q.type==='chair'){q.vx=(q.x<pcx()?-1:1)*220;q.t=1;floatText('CHAIR EXCUSED',q.x,q.y-55,C.ink);}
+    else if(q.type==='drawer'){q.open=!q.open;q.t=1;burst(q.x,q.y-32,10,[C.paper,C.ketchup],120);floatText(q.open?'DRAWER ACKNOWLEDGED':'RECORDS RECONTAINED',q.x,q.y-68,C.tealDark);}
+    else{q.t=1.8;burst(q.x,q.y-55,12,[LEVEL===1?C.crumb:C.teal,'#79a85d',C.paper],150);floatText(LEVEL===1?'CRUMBS REORGANIZED':LEVEL===2?'FORMS SHUFFLED':'LEAVES APPLAUD',q.x,q.y-86,C.tealDark);}
+  }
+  return hit;
+}
+function stampEnvironment(A,x,y,col){
+  const q=environmentProps.find(q=>Math.abs(q.x-x)<reach(105)&&Math.abs(q.y-25-y)<120);if(!q)return false;
+  stampFx(q.x,q.y-30);q.mark=stampMode;
+  if(q.type==='chair'){q.vx=A?260*(P.face||1):0;floatText(A?'CHAIR APPROVED TO ROLL':'CHAIR PARKED BY ORDER',q.x,q.y-62,col);}
+  else if(q.type==='vent'){q.t=A?3:0;floatText(A?'AIRFLOW APPROVED':'BREEZE FORBIDDEN',q.x,q.y-60,col);}
+  else if(q.type==='drawer'){q.open=A;q.t=1;floatText(A?'CONTENTS APPROVED':'DRAWER FORBIDDEN OPEN',q.x,q.y-68,col);}
+  else{q.t=A?2.5:.25;floatText(A?'GROWTH APPROVED':'RUSTLING FORBIDDEN',q.x,q.y-82,col);}
+  return true;
+}
+function updateEnvironment(dt){
+  for(const q of environmentProps){
+    q.t=Math.max(0,q.t-dt);q.cool=Math.max(0,q.cool-dt);
+    if(q.type==='chair'){
+      q.x+=q.vx*dt;q.vx*=Math.pow(.04,dt);
+      if(q.x<q.min||q.x>q.max){q.x=Math.max(q.min,Math.min(q.max,q.x));q.vx*=-.45;}
+      const box={x:q.x-25,y:q.y-35,w:50,h:35},prevBottom=P.y+P.h-P.vy*dt;
+      if(P.vy>0&&prevBottom<=box.y+9&&ov(P,box)){P.y=box.y-P.h;P.vy=-610;P.ground=false;q.vx+=P.vx*.55;q.t=.7;tone(760,.12,'triangle',.045,1150);floatText('SEATED BRIEFLY',q.x,q.y-70,C.tealDark);}
+    }else if(q.type==='vent'&&q.t>0&&Math.abs(q.x-pcx())<75&&P.y+P.h>q.y-230){
+      P.vy=Math.max(-580,P.vy-1050*dt);P.ground=false;
+      if(Math.random()<dt*14)parts.push({x:q.x+(Math.random()-.5)*35,y:q.y-20-Math.random()*80,vx:(Math.random()-.5)*30,vy:-90,life:.5,c:C.paper,s:3});
+    }
+  }
+}
+function drawEnvironment(){
+  for(const q of environmentProps){
+    if(q.type==='vent'){
+      ctx.fillStyle='#405b57';ctx.fillRect(q.x-32,q.y-14,64,14);ctx.strokeStyle='#a8bbb5';ctx.lineWidth=2;
+      for(let i=-22;i<=22;i+=11){ctx.beginPath();ctx.moveTo(q.x+i,q.y-12);ctx.lineTo(q.x+i,q.y-3);ctx.stroke();}
+      if(q.t>0){ctx.strokeStyle='rgba(188,230,221,.75)';for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(q.x-22+i*20,q.y-18);ctx.bezierCurveTo(q.x-38+i*22,q.y-55,q.x+18+i*12,q.y-82,q.x-15+i*18,q.y-115);ctx.stroke();}}
+    }else if(q.type==='chair'){
+      ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.vx*.00045);ctx.strokeStyle='#263f38';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(0,-23);ctx.lineTo(0,-5);ctx.moveTo(-18,-31);ctx.lineTo(18,-31);ctx.lineTo(15,-9);ctx.lineTo(-15,-9);ctx.closePath();ctx.stroke();ctx.fillStyle=LEVEL===1?C.mustard:LEVEL===2?C.ketchup:C.teal;ctx.fillRect(-17,-34,34,22);ctx.beginPath();ctx.moveTo(0,-5);ctx.lineTo(-18,0);ctx.moveTo(0,-5);ctx.lineTo(18,0);ctx.stroke();ctx.fillStyle='#1b272b';ctx.beginPath();ctx.arc(-20,0,5,0,7);ctx.arc(20,0,5,0,7);ctx.fill();ctx.restore();
+    }else if(q.type==='drawer'){
+      const h=q.open?58:48;ctx.fillStyle='#647a74';ctx.fillRect(q.x-27,q.y-h,54,h);ctx.strokeStyle='#263f38';ctx.lineWidth=2;ctx.strokeRect(q.x-27,q.y-h,54,h);
+      for(let i=0;i<2;i++){const yy=q.y-h+7+i*22,off=q.open&&i===0?18:0;ctx.fillStyle='#dce3df';ctx.fillRect(q.x-21+off,yy,42,17);ctx.fillStyle='#354943';ctx.fillRect(q.x-6+off,yy+7,12,3);}
+      if(q.open){ctx.fillStyle=C.paper;ctx.fillRect(q.x-13,q.y-h-12,26,17);}
+    }else{
+      const shake=q.t>0?Math.sin(time*30)*5:0;ctx.fillStyle=LEVEL===1?'#8a5b25':'#405b52';ctx.fillRect(q.x-31,q.y-25,62,25);
+      for(let i=0;i<5;i++){ctx.strokeStyle=LEVEL===1?'#9f712c':'#326b48';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(q.x-22+i*11,q.y-25);ctx.quadraticCurveTo(q.x-30+i*14+shake,q.y-55,q.x-20+i*12+shake,q.y-76-i%2*12);ctx.stroke();ctx.fillStyle=LEVEL===1?'#d5a449':'#68a261';ctx.beginPath();ctx.ellipse(q.x-20+i*12+shake,q.y-78-i%2*12,16,7,i%2?.6:-.6,0,7);ctx.fill();}
+    }
+    if(q.mark)inkMark(q.mark,q.x,q.y-37,.55);
+  }
+}
+function environmentHint(){
+  const q=nearbyEnvironment();if(!q)return null;
+  if(q.type==='chair')return 'Jump on the chair · X rolls it';
+  if(q.type==='vent')return 'X whistle for an updraft';
+  if(q.type==='drawer')return 'X whistle opens the drawer';
+  return 'X whistle to disturb '+q.label.toLowerCase();
+}
+
 function drawDepartmentBack(){
   // Outdoor Indoors now reads as a deep office atrium instead of one flat wall.
   const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#aecbc2');sky.addColorStop(.58,'#dce8df');sky.addColorStop(1,'#91aa9f');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
@@ -1553,6 +1632,7 @@ function update(dt){
         }
       }
     }
+    if(environmentWhistle())hit=true;
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
     if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}
       if(deptBoss&&deptBoss.state==='quiet'&&Math.abs(deptBoss.x+deptBoss.w/2-pcx())<reach(330)){
@@ -1629,6 +1709,7 @@ function update(dt){
 
   // --- egg colleagues chatter (draw only)
 
+  updateEnvironment(dt);
   updateSpoons(dt); if(state !== 'play') return;
 
   // --- boss
@@ -1665,6 +1746,7 @@ function doAction(){
     if(!bridge.toasted && x > 2380 && x < 2560 && P.y > 360) floatText('You need something official.', x, P.y-30, C.ink); else salute();
     return;
   }
+  if(stampEnvironment(A,x,y,col)) return;
   if(LEVEL === 3 && stampDepartment(A,x,y,col)) return;
   if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onStamp && a.b.onStamp(A, x, y, col)) return; }
   if(boss.state==='fight'){
@@ -2524,8 +2606,8 @@ function drawExit(){
 
 function drawPrompts(){
   if(state!=='play') return;
-  let hint = null;
-  if(LEVEL === 2) hint = hint2();
+  let hint = environmentHint();
+  if(!hint && LEVEL === 2) hint = hint2();
   else if(!gate.open && Math.abs(pcx()-1015) < 220) hint = 'X  Whistle';
   else if(LEVEL === 1 && hasStamp && lift.state==='pending' && pcx() > 2300 && pcx() < 2460) hint = stampMode==='APPROVED' ? 'C  Approve the platform' : 'V  Switch to APPROVED';
   else if(!bridge.toasted && pcx() > 2460 && pcx() < 2560) hint = !hasStamp ? 'Needs approval' : stampMode==='APPROVED' ? 'C  Stamp the bridge' : 'V  Switch to APPROVED';
@@ -2603,6 +2685,7 @@ function render(){
   if(LEVEL !== 3) for(const sg of signs) drawSign(sg);
   if(LEVEL === 1){ drawArena(); drawExit(); } else if(LEVEL === 2) drawLevel2Back();
   for(const s of statics) drawGround(s);
+  drawEnvironment();
   if(LEVEL === 1){ drawForks(); drawBridge(); drawGate(); drawStamp(); drawLift(); drawBarrier(); }
   for(const cp of checkpoints) drawCheckpoint(cp);
   for(const it of collect) drawCollect(it);
