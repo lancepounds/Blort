@@ -192,6 +192,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       <div class="modes">
         <button class="btn" id="nextBtn">Continue to 1-2: The Annex</button>
         <button class="btn alt" id="againBtn">Play This Level Again</button>
+        <button class="btn alt" id="levelSelectBtn">Return to Level Select</button>
       </div>
     </div>
   </div>
@@ -2970,6 +2971,13 @@ function startGame(mode, lvl){
 document.getElementById('startRelaxed').addEventListener('click', () => startGame('relaxed', startLevelChoice));
 document.getElementById('startStandard').addEventListener('click', () => startGame('standard', startLevelChoice));
 document.getElementById('againBtn').addEventListener('click', () => startGame(null, LEVEL));
+document.getElementById('levelSelectBtn').addEventListener('click', () => {
+  state='title';paused=false;clearInput();document.getElementById('winScreen').hidden=true;
+  document.getElementById('pauseScreen').hidden=true;document.getElementById('titleScreen').hidden=false;
+  startLevelChoice=LEVEL;setLevelHeading(LEVEL);
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
+  document.querySelector('[data-level="'+LEVEL+'"]').focus();
+});
 document.getElementById('nextBtn').addEventListener('click',()=>startGame(null,Math.min(4,LEVEL+1)));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
   startLevelChoice = +b.dataset.level; setLevelHeading(startLevelChoice);
