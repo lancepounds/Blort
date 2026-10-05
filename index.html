@@ -150,6 +150,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
         <button class="tog" data-level="1" aria-pressed="true">1-1 Permit to Toast</button>
         <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span></button>
         <button class="tog" data-level="3" aria-pressed="false">2-1 Outdoor Indoors<span>Office forest, leafy elevators, filing-cabinet river</span></button>
+        <button class="tog" data-level="4" aria-pressed="false">3-1 Tuesday<span>Set three clocks after lunch, survive the impatient clouds, reach Wednesday</span></button>
       </div>
       <div class="modes">
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
@@ -452,7 +453,7 @@ function mkCrab(minX,maxX,top){ return {x:minX+30,y:top-26,w:44,h:26,minX,maxX,d
 
 function reset(full){
   if(full){
-    if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
+    if(LEVEL === 4) build4(); else if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
     buildEnvironment(LEVEL);
     deaths = 0; achievements = new Set(); hasStamp = LEVEL >= 2; levelTime = 0; stampMode = 'APPROVED';
     respawn = LEVEL === 1 ? {x:130,y:GY-40,first:true} : {x:80,y:GY-40,first:false};
@@ -485,6 +486,7 @@ function solids(){
   
   if(deptExit && !deptExit.open) s.push(deptExit);
   }
+  if(LEVEL === 4){for(const g of tuesdayGates)if(!g.open)s.push(g);if(tuesdayExit&&!tuesdayExit.open)s.push(tuesdayExit);}
   if(LEVEL === 2){
     if(annexDoor && (!annexDoor.open || annexDoor.t < .5)) s.push(annexDoor);
     for(const a of arenas){
@@ -534,6 +536,7 @@ let hasStretch = false, hasPocket = false, pocketItem = null;
 let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [], hz = [], ducks = [], exit2 = null;
 let stretchFx = null, zip = null;
 let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [], deptBoss = null, soundWaves = [], environmentProps = [];
+let tuesdayClocks=[],tuesdayGates=[],impatientClouds=[],timeDrops=[],tuesdayExit=null;
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -666,6 +669,29 @@ function build3(){
     {x:3500,done:false,fn:()=>announce('ALL LEAVES MUST CLOCK OUT BEFORE FALLING.')}
   ];
 }
+
+function build4(){
+ LEVEL_W=5200;clearLevel2();statics=[
+ {x:0,y:GY,w:1120,h:100,k:'office'},{x:1320,y:GY,w:1180,h:100,k:'office'},{x:2700,y:GY,w:1180,h:100,k:'office'},{x:4080,y:GY,w:1120,h:100,k:'office'},
+ {x:520,y:335,w:150,h:18,k:'branch'},{x:1080,y:270,w:130,h:18,k:'branch'},{x:1830,y:325,w:160,h:18,k:'branch'},{x:2460,y:245,w:140,h:18,k:'branch'},{x:3220,y:330,w:150,h:18,k:'branch'},{x:3820,y:255,w:140,h:18,k:'branch'},{x:4510,y:330,w:150,h:18,k:'branch'},{x:-20,y:0,w:20,h:H,k:'wall'},{x:LEVEL_W,y:0,w:20,h:H,k:'wall'}];
+ gate={x:-9999,y:-9999,w:1,h:1,open:true,t:9};bridge={x:-9999,y:-9999,w:1,h:1,toasted:true,unaffected:false,tt:1};stamp={x:-9999,y:-9999,got:true};lift={x:-9999,y:GY,w:1,h:1,state:'pending',top:0,mark:null};barrier={x:-9999,y:-9999,w:1,h:1,down:true,t:9,mark:null};crabs=[];spoons=[];spCites=[];cones=[];cabinets=[];cites=[];boss={state:'gone',hp:0,x:-9999,y:-9999,t:0,fire:0,flash:0,pending:false,droop:0};exitDoor={open:false,t:0,done:false,applause:0};
+ deptElevators=[];deptPapers=[];ceilingHorses=[];horseDrops=[];loudRectangles=[];soundWaves=[];deptBoss=null;deptExit=null;
+ tuesdayClocks=[{x:820,after:false,t:0},{x:2350,after:false,t:0},{x:3740,after:false,t:0}];
+ tuesdayGates=[{x:1245,y:205,w:34,h:235,open:false,t:0},{x:2625,y:205,w:34,h:235,open:false,t:0},{x:4005,y:205,w:34,h:235,open:false,t:0}];
+ impatientClouds=[{x:1040,min:650,max:1240,dir:1,zone:0,cd:1.2},{x:2480,min:2050,max:2600,dir:-1,zone:1,cd:1.5},{x:3880,min:3440,max:4000,dir:1,zone:2,cd:1.8}];timeDrops=[];tuesdayExit={x:5040,y:GY-142,w:105,h:142,open:false,done:false};
+ collect=[[290,400],[590,300],[1050,230],[1540,400],[1900,285],[2440,205],[2880,400],[3300,290],[3820,215],[4260,400],[4660,290]].map(p=>({t:'yawn',x:p[0],y:p[1],got:false}));collect.push({t:'form',x:1990,y:400,got:false,name:'Form T-12: Lunch Occurrence Affidavit'},{t:'button',x:3320,y:300,got:false},{t:'nothing',x:4740,y:400,got:false});
+ checkpoints=[{x:80,on:true},{x:1380,on:false},{x:2760,on:false},{x:4140,on:false}];
+ eggs=[{x:360,line:'Tuesday is a place. Monday is merely a rumor.',sir:'SIR! The clocks respond to a whistle, sir!'},{x:1690,line:'Clouds become impatient after lunch. Union rule.',sir:'SIR! Move when the cloud flashes, sir!'},{x:3090,line:'The third lunch is traditionally the most punctual.',sir:'SIR! One more clock, then Wednesday, sir!'}];
+ signs=[{x:110,y:305,w:260,lines:['WELCOME TO TUESDAY','LOCAL TIME: DISPUTED'],c:C.mustard},{x:690,y:235,w:250,lines:['WHISTLE THE CLOCK','TO DECLARE AFTER LUNCH'],c:C.teal},{x:2050,y:280,w:250,lines:['CLOUDS ATTACK ONLY','AFTER LUNCH'],c:C.ketchup},{x:4480,y:280,w:250,lines:['WEDNESDAY','THIS WAY, EVENTUALLY'],c:C.teal}];
+ triggers=[{x:420,done:false,fn:()=>announce('TUESDAY IS A LOCATION. WHISTLE THREE CLOCKS TO 12:01, THEN REACH WEDNESDAY.')},{x:1450,done:false,fn:()=>announce('FIRST LUNCH DECLARED. THE CLOUD HAS BECOME PROFESSIONALLY IMPATIENT.')},{x:2850,done:false,fn:()=>announce('TIME REPEATS HERE. YOUR PAPERWORK DOES NOT.')}];
+}
+function whistleTuesday(){for(let i=0;i<tuesdayClocks.length;i++){const c=tuesdayClocks[i];if(!c.after&&Math.abs(c.x-pcx())<reach(250)){c.after=true;c.t=1;tuesdayGates[i].open=true;burst(c.x,GY-150,24,[C.mustard,C.paper,C.ketchup],190);floatText('12:01 · AFTER LUNCH',c.x,GY-205,C.ketchup);announce('CLOCK '+(i+1)+' DECLARES AFTER LUNCH. '+(3-tuesdayClocks.filter(q=>q.after).length)+' REMAIN.');if(tuesdayClocks.every(q=>q.after)){announce('ALL LUNCHES ACCOUNTED FOR. WEDNESDAY IS NOW ACCEPTING WALK-INS.');achieve('Arrived After Lunch');}return true;}}return false;}
+function update4(dt){
+ for(const c of tuesdayClocks)c.t=Math.max(0,c.t-dt);for(const g of tuesdayGates)g.t+=(Number(g.open)-g.t)*Math.min(1,dt*5);tuesdayExit.open=tuesdayClocks.every(c=>c.after);
+ for(const cl of impatientClouds){cl.x+=cl.dir*(cl.zone===2?50:42)*dt;if(cl.x<cl.min||cl.x>cl.max){cl.dir*=-1;cl.x=Math.max(cl.min,Math.min(cl.max,cl.x));}if(!tuesdayClocks[cl.zone].after)continue;cl.cd-=dt;if(cl.cd<.45&&cl.cd>0)cl.warn=true;if(cl.cd<=0){cl.warn=false;cl.cd=1.7+Math.random()*.8;timeDrops.push({x:cl.x+(Math.random()-.5)*100,y:118,vy:0});tone(180,.12,'sawtooth',.035,110);}}
+ for(const d of timeDrops){d.vy+=780*dt;d.y+=d.vy*dt;if(Math.hypot(d.x-pcx(),d.y-pcy())<28){d.dead=true;if(SET.nofail){P.vy=-420;P.vx+=(P.x<d.x?-1:1)*160;floatText('MEETING POSTPONED',d.x,d.y,C.tealDark);}else return die();}}timeDrops=timeDrops.filter(d=>!d.dead&&d.y<GY+30);if(tuesdayExit.open&&ov(P,tuesdayExit))winLevel();
+}
+
 function update3(dt){
   for(const e of deptElevators){
     const oldY=e.y, riding=P&&P.ground&&P.x+P.w>e.x&&P.x<e.x+e.w&&Math.abs(P.y+P.h-oldY)<8;
@@ -763,10 +789,10 @@ function buildEnvironment(level){
   ]:level===2?[
     p('vent',880,{label:'ANNEX AIR'}),p('chair',2670,{min:2570,max:2900,label:'MEETING CHAIR'}),
     p('drawer',4120,{label:'UNNECESSARY FILES'}),p('shrub',5320,{label:'PAPER FERN'})
-  ]:[
+  ]:level===3?[
     p('shrub',570,{label:'EMPLOYEE SHRUB'}),p('vent',1540,{label:'CANOPY VENT'}),
     p('drawer',2440,{label:'LEAF RECORDS'}),p('chair',3650,{min:3520,max:3890,label:'ROLLING REVIEW'})
-  ];
+  ]:[p('chair',1740,{min:1600,max:2020,label:'LUNCH CHAIR'}),p('vent',3000,{label:'TIME VENT'}),p('drawer',4400,{label:'TOMORROW FILES'})];
 }
 function nearbyEnvironment(range=130){return environmentProps.find(q=>Math.abs(q.x-pcx())<reach(range)&&Math.abs((q.y-25)-pcy())<150);}
 function environmentWhistle(){
@@ -829,6 +855,22 @@ function environmentHint(){
   if(q.type==='vent')return 'X whistle for an updraft';
   if(q.type==='drawer')return 'X whistle opens the drawer';
   return 'X whistle to disturb '+q.label.toLowerCase();
+}
+
+
+function drawTuesdayBack(){
+ const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#4f5482');sky.addColorStop(.55,'#a58db0');sky.addColorStop(1,'#f2bd78');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='rgba(250,235,190,.18)';for(let x=-200-((camX*.12)%280);x<W+200;x+=280){ctx.beginPath();ctx.arc(x,155,95,0,7);ctx.fill();}
+ for(let x=-100-((camX*.28)%240);x<W+240;x+=240){ctx.fillStyle='#605a78';ctx.fillRect(x,250,150,190);ctx.fillStyle='#e4c887';ctx.beginPath();ctx.arc(x+75,286,34,0,7);ctx.fill();ctx.strokeStyle='#473d50';ctx.lineWidth=5;ctx.stroke();ctx.beginPath();ctx.moveTo(x+75,286);ctx.lineTo(x+75,264);ctx.moveTo(x+75,286);ctx.lineTo(x+91,286);ctx.stroke();}
+ ctx.fillStyle='rgba(255,233,175,.09)';for(let i=0;i<12;i++){const x=((i*173-time*8-camX*.08)%1200+1200)%1200;ctx.fillRect(x,0,2,H);}
+}
+function drawTuesdayFront(){
+ for(const c of tuesdayClocks){const on=c.after,pulse=c.t>0?Math.sin(time*25)*5:0;ctx.save();ctx.translate(c.x,GY);ctx.fillStyle='#40384e';ctx.fillRect(-16,-132,32,132);ctx.fillStyle=on?'#f6d063':'#eee3c1';ctx.beginPath();ctx.arc(0,-158,50+pulse,0,7);ctx.fill();ctx.strokeStyle=on?C.ketchup:'#40384e';ctx.lineWidth=7;ctx.stroke();ctx.strokeStyle='#40384e';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-158);ctx.lineTo(on?22:0,-158+(on?0:-25));ctx.moveTo(0,-158);ctx.lineTo(on?-10:19,-138);ctx.stroke();ctx.fillStyle='#40384e';ctx.beginPath();ctx.arc(0,-158,5,0,7);ctx.fill();txt(on?'12:01':'11:59',0,-92,15,on?C.ketchup:C.paper,FD);txt(on?'AFTER LUNCH':'BEFORE LUNCH',0,-72,10,on?C.mustard:C.paper,FB);ctx.restore();}
+ for(const g of tuesdayGates){ctx.save();ctx.translate(g.x,0);ctx.globalAlpha=1-g.t;ctx.fillStyle='#4d4055';ctx.fillRect(0,g.y,g.w,g.h);ctx.fillStyle=C.mustard;for(let y=g.y+12;y<g.y+g.h;y+=34)ctx.fillRect(4,y,g.w-8,9);ctx.restore();}
+ for(const cl of impatientClouds){const awake=tuesdayClocks[cl.zone].after;ctx.save();ctx.translate(cl.x,95);ctx.fillStyle=cl.warn?'#f3a25e':awake?'#756477':'#ded6df';for(const q of [[-34,5,28],[0,-5,38],[35,7,25]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,7);ctx.fill();}ctx.fillRect(-52,8,104,28);ctx.fillStyle='#342d3c';ctx.beginPath();ctx.arc(-18,14,4,0,7);ctx.arc(18,14,4,0,7);ctx.fill();ctx.strokeStyle='#342d3c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-28,5);ctx.lineTo(-10,9);ctx.moveTo(28,5);ctx.lineTo(10,9);ctx.stroke();if(!awake)txt('OFF DUTY',0,-42,10,'#eee3c1',FB);ctx.restore();}
+ for(const d of timeDrops){ctx.save();ctx.translate(d.x,d.y);ctx.rotate(time*2);ctx.fillStyle=C.paper;ctx.fillRect(-15,-20,30,40);ctx.strokeStyle=C.ketchup;ctx.lineWidth=3;ctx.strokeRect(-15,-20,30,40);txt('MIN',0,0,9,C.ketchup,FD);ctx.restore();}
+ if(tuesdayExit){ctx.fillStyle=tuesdayExit.open?'#4f9b84':'#4b4052';ctx.fillRect(tuesdayExit.x,tuesdayExit.y,tuesdayExit.w,tuesdayExit.h);ctx.fillStyle=C.paper;ctx.fillRect(tuesdayExit.x+14,tuesdayExit.y+18,tuesdayExit.w-28,36);txt('WED',tuesdayExit.x+tuesdayExit.w/2,tuesdayExit.y+36,18,tuesdayExit.open?C.tealDark:C.ketchup,FD);txt(tuesdayExit.open?'OPEN':'PENDING',tuesdayExit.x+tuesdayExit.w/2,tuesdayExit.y+78,12,C.paper,FB);}
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);const done=tuesdayClocks.filter(c=>c.after).length;ctx.fillStyle='rgba(35,29,48,.84)';rr(18,18,330,58,8);ctx.fill();txt('TUESDAY CLOCKS  '+done+' / 3',183,38,18,C.mustard,FD);txt(done===3?'Reach Wednesday →':'Whistle each clock to 12:01',183,61,13,C.paper,FB);ctx.restore();
 }
 
 function drawDepartmentBack(){
@@ -1657,6 +1699,7 @@ function update(dt){
       }
     }
     if(environmentWhistle())hit=true;
+    if(LEVEL===4&&whistleTuesday())hit=true;
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
     if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}
       if(deptBoss&&deptBoss.state==='quiet'&&Math.abs(deptBoss.x+deptBoss.w/2-pcx())<reach(330)){
@@ -1740,6 +1783,7 @@ function update(dt){
   if(LEVEL === 1) updateBoss(dt);
   if(LEVEL === 2){ update2(dt); if(state !== 'play'){ pressed.clear(); return; } }
   if(LEVEL === 3){ update3(dt); if(state !== 'play'){ pressed.clear(); return; } }
+  if(LEVEL === 4){ update4(dt); if(state !== 'play'){ pressed.clear(); return; } }
 
   // --- exit
   if(LEVEL === 1 && (boss.state === 'gone' || boss.state === 'defeated')){
@@ -1865,7 +1909,7 @@ function winLevel(){
   state = 'win'; winT = 0; P.hidden = true; exitDoor.done = true;
   if(LEVEL === 1){ floatText('*thunderous applause for the big door*', 4960, 110, C.paper); achieve('Used the Actual Exit'); }
   else if(LEVEL === 2){ exit2.done = true; floatText('*polite applause from the Annex*', exit2.x+20, 220, C.paper); achieve('Survived the Annex'); }
-  else { deptExit.done=true;floatText('*the indoor forest files a rustling report*',deptExit.x,220,C.paper);achieve('Went Outside Indoors'); }
+  else if(LEVEL===3){deptExit.done=true;floatText('*the indoor forest files a rustling report*',deptExit.x,220,C.paper);achieve('Went Outside Indoors');}else{tuesdayExit.done=true;floatText('*Wednesday reluctantly becomes available*',tuesdayExit.x,220,C.paper);achieve('Completed Tuesday');}
   [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.06),i*130));
 }
 function showWin(){
@@ -1875,13 +1919,13 @@ function showWin(){
     `<span>Time <b>${mm}:${ss}</b></span><span>Yawns <b>${y.filter(c=>c.got).length}/${y.length}</b></span><span>Forms <b>${f.filter(c=>c.got).length}/${f.length}</b></span>`+
     `<span>Licenses revoked <b>${deaths}</b></span><span>Loose Buttons <b>${bt.filter(c=>c.got).length}/${bt.length}</b></span><span>Certified Nothing <b>${n.got?'[&#10003;]':'[ ]'}</b></span>`+
     `<span style="grid-column:1/-1">Fake achievements <b>${achievements.size}</b></span>`;
-  document.getElementById('winTag').textContent = LEVEL === 1 ? 'Level concluded (unofficially)' : LEVEL === 2 ? 'Annex concluded (reluctantly)' : 'Outdoor Indoors inspection complete';
-  document.getElementById('winTitle').textContent = LEVEL === 1 ? 'Permit Granted' : LEVEL === 2 ? 'Annex Cleared' : 'Outside Filed Indoors';
-  document.getElementById('winText').textContent = LEVEL === 1 ? 'Retroactively. The End of the Beginning is in a later level. Probably.' : LEVEL === 2 ? 'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.' : 'The office forest has approved your transfer to Tuesday.';
-  document.getElementById('nextBtn').hidden = LEVEL === 3;
-  document.getElementById('nextBtn').textContent = LEVEL === 1 ? 'Continue to 1-2: The Annex' : 'Continue to 2-1: Outdoor Indoors';
+  document.getElementById('winTag').textContent=LEVEL===1?'Level concluded (unofficially)':LEVEL===2?'Annex concluded (reluctantly)':LEVEL===3?'Outdoor Indoors inspection complete':'Tuesday concluded at 12:01';
+  document.getElementById('winTitle').textContent=LEVEL===1?'Permit Granted':LEVEL===2?'Annex Cleared':LEVEL===3?'Outside Filed Indoors':'Wednesday Located';
+  document.getElementById('winText').textContent=LEVEL===1?'Retroactively. The End of the Beginning is in a later level. Probably.':LEVEL===2?'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.':LEVEL===3?'The office forest has approved your transfer to Tuesday.':'You crossed a geographic weekday without being late. The parade continues.';
+  document.getElementById('nextBtn').hidden=LEVEL===4;
+  document.getElementById('nextBtn').textContent=LEVEL===1?'Continue to 1-2: The Annex':LEVEL===2?'Continue to 2-1: Outdoor Indoors':'Continue to 3-1: Tuesday';
   document.getElementById('winScreen').hidden = false;
-  document.getElementById(LEVEL === 3 ? 'againBtn' : 'nextBtn').focus();
+  document.getElementById(LEVEL===4?'againBtn':'nextBtn').focus();
 }
 
 /* ---------------- drawing ---------------- */
@@ -2093,6 +2137,7 @@ function drawTile(L, factor, y, extra){
 const motes = Array.from({length:34}, (_,i)=>({x:Math.random()*W, y:Math.random()*H, s:.6+Math.random()*1.6, v:4+Math.random()*10, p:Math.random()*6}));
 
 function drawBackground(){
+  if(LEVEL === 4){drawTuesdayBack();return;}
   if(LEVEL === 3){drawDepartmentBack();return;}
   if(!LAY.sky) buildScenery();
   ctx.drawImage(LAY.sky.c, 0, 0, W, H);
@@ -2706,7 +2751,7 @@ function render(){
   solidsCache = solids();
   drawBackground();
   ctx.save(); ctx.translate(-Math.round(camX), 0);
-  if(LEVEL !== 3) for(const sg of signs) drawSign(sg);
+  if(LEVEL !== 3 && LEVEL !== 4) for(const sg of signs) drawSign(sg);
   if(LEVEL === 1){ drawArena(); drawExit(); } else if(LEVEL === 2) drawLevel2Back();
   for(const s of statics) drawGround(s);
   drawEnvironment();
@@ -2718,8 +2763,9 @@ function render(){
   for(const sp of spoons) drawSpoon(sp);
   drawSpCites();
   for(const c of crabs) drawCrab(c);
-  if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else drawDepartmentFront();
+  if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else if(LEVEL===3) drawDepartmentFront(); else drawTuesdayFront();
   if(LEVEL === 3){for(const sg of signs) drawSign(sg);drawDepartmentLabels();}
+  if(LEVEL === 4){for(const sg of signs) drawSign(sg);}
   if(P && !P.hidden && state !== 'dead') drawStretch();
   if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, whistle:P.wcd, moving:Math.abs(P.vx)>20});
   for(const r of rings){
@@ -2851,7 +2897,7 @@ function togglePause(){
   if(paused){ resumeGame(); return; }
   if(state !== 'play' && state !== 'dead') return;
   paused = true; clearInput(); pauseScreen.hidden = false;
-  document.getElementById('pauseObjective').textContent = LEVEL===3 ? 'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.' : LEVEL===2 ? 'Objective: clear the Annex confrontations and reach the exit.' : 'Objective: proceed right through the Municipal Breakfast District.';
+  document.getElementById('pauseObjective').textContent=LEVEL===4?'Objective: whistle all three clocks to 12:01, avoid the awakened clouds, then reach Wednesday.':LEVEL===3?'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.':LEVEL===2?'Objective: clear the Annex confrontations and reach the exit.':'Objective: proceed right through the Municipal Breakfast District.';
   document.getElementById('resumeBtn').focus();
 }
 pauseBtn.addEventListener('click', togglePause);
@@ -2894,7 +2940,7 @@ function frame(now){
 
 
 function setLevelHeading(lvl){
-  const data = lvl===3
+  const data=lvl===4?['BLORT · The Gumphastic Yawn Parade · World 3-1','Tuesday','A weekday treated as a place. Whistle three clocks past lunch, outlast the impatient clouds, and locate Wednesday.']:lvl===3
     ? ['BLORT · The Gumphastic Yawn Parade · World 2-1','The Department of Outdoor Indoors','A forest working inside an office building. Approve the leafy elevators, file the river, and reach Tuesday.']
     : lvl===2
       ? ['BLORT · The Gumphastic Yawn Parade · World 1-2','The Annex of Unnecessary Confrontations','Sock Stretch, the Emergency Pocket, and four confrontations that were not strictly necessary.']
@@ -2919,11 +2965,12 @@ function startGame(mode, lvl){
   cv.focus();
   if(LEVEL === 1) announce('Welcome to the Municipal Breakfast District. Proceed right. Breakfast ends when approved.');
   if(LEVEL === 3) announce('DEPARTMENT OF OUTDOOR INDOORS. APPROVE ELEVATORS. FORBID THE RIVER CABINET. REACH TUESDAY.');
+  if(LEVEL === 4) announce('WELCOME TO TUESDAY. WHISTLE THREE CLOCKS TO 12:01. CLOUDS ATTACK ONLY AFTER LUNCH.');
 }
 document.getElementById('startRelaxed').addEventListener('click', () => startGame('relaxed', startLevelChoice));
 document.getElementById('startStandard').addEventListener('click', () => startGame('standard', startLevelChoice));
 document.getElementById('againBtn').addEventListener('click', () => startGame(null, LEVEL));
-document.getElementById('nextBtn').addEventListener('click', () => startGame(null, LEVEL === 1 ? 2 : 3));
+document.getElementById('nextBtn').addEventListener('click',()=>startGame(null,Math.min(4,LEVEL+1)));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
   startLevelChoice = +b.dataset.level; setLevelHeading(startLevelChoice);
   document.querySelectorAll('[data-level]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
