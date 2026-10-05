@@ -791,19 +791,65 @@ function drawDepartmentBack(){
   ctx.fillStyle='rgba(255,244,186,.07)';for(let x=-100-((camX*.12)%300);x<W+200;x+=300){ctx.beginPath();ctx.moveTo(x,46);ctx.lineTo(x+110,46);ctx.lineTo(x+200,GY);ctx.lineTo(x-35,GY);ctx.closePath();ctx.fill();}
 }
 function drawDepartmentFront(){
+  // Each stretch has a visual identity: reception grove, river records,
+  // canopy operations, and the final quiet-review chamber.
+  const districts=[
+    {x:80,w:650,name:'RECEPTION GROVE',sub:'VISITORS MUST PHOTOSYNTHESIZE',c:'#3f7c61'},
+    {x:1080,w:700,name:'HUMAN BRANCHES',sub:'ORIENTATION · FLOOR 3',c:'#6d7f49'},
+    {x:2220,w:760,name:'CANOPY OPERATIONS',sub:'LEAVES CLOCK IN HERE',c:'#3f756b'},
+    {x:3440,w:540,name:'ACOUSTIC ARBORETUM',sub:'INDOOR VOICES GROW OUTDOORS',c:'#805f3d'}
+  ];
+  for(const d of districts){
+    ctx.fillStyle='rgba(24,55,48,.12)';ctx.fillRect(d.x,GY-10,d.w,10);
+    ctx.strokeStyle='rgba(44,83,71,.48)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(d.x+28,GY);ctx.lineTo(d.x+28,118);ctx.quadraticCurveTo(d.x+d.w/2,58,d.x+d.w-28,118);ctx.lineTo(d.x+d.w-28,GY);ctx.stroke();
+    ctx.fillStyle=d.c;rr(d.x+d.w/2-142,91,284,55,8);ctx.fill();ctx.strokeStyle=C.paper;ctx.lineWidth=2;rr(d.x+d.w/2-137,96,274,45,5);ctx.stroke();
+    txt(d.name,d.x+d.w/2,113,15,C.paper,FB);txt(d.sub,d.x+d.w/2,132,9,'#e4ecd9',FB);
+  }
+
+  // Glass greenhouse ribs, vents, and irrigation pipes turn the office into a habitat.
+  ctx.strokeStyle='rgba(77,117,105,.6)';ctx.lineWidth=4;
+  for(let x=180;x<3900;x+=420){ctx.beginPath();ctx.moveTo(x,GY);ctx.quadraticCurveTo(x+105,165,x+210,92);ctx.quadraticCurveTo(x+315,165,x+420,GY);ctx.stroke();}
+  ctx.strokeStyle='#617e75';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(110,178);ctx.lineTo(3910,178);ctx.stroke();
+  ctx.fillStyle='#b9ccc3';for(let x=170;x<3910;x+=380){ctx.fillRect(x,171,54,15);ctx.fillStyle='#44665b';ctx.fillRect(x+9,175,36,6);ctx.fillStyle='#b9ccc3';}
+
+  // Office furniture is being slowly reclaimed by plants.
+  const desks=[420,1460,2510,2920,3680];
+  for(const x of desks){
+    ctx.fillStyle='#836b50';ctx.fillRect(x,GY-76,116,12);ctx.fillStyle='#514439';ctx.fillRect(x+9,GY-64,8,64);ctx.fillRect(x+98,GY-64,8,64);
+    ctx.fillStyle='#d9ded8';ctx.fillRect(x+28,GY-116,60,38);ctx.fillStyle='#34524c';ctx.fillRect(x+33,GY-111,50,27);ctx.fillStyle='#8aa49a';ctx.fillRect(x+54,GY-78,8,15);
+    ctx.fillStyle='#365f45';ctx.fillRect(x-6,GY-37,30,37);ctx.fillStyle='#69a261';
+    for(let j=0;j<4;j++){ctx.beginPath();ctx.ellipse(x+9+(j%2?10:-10),GY-43-j*10,18,7,j%2?.7:-.7,0,7);ctx.fill();}
+  }
+
+  // Large foreground planters frame the route without hiding Gumbo.
+  for(let x=220;x<4380;x+=510){
+    ctx.fillStyle='#334e47';ctx.fillRect(x,GY-28,82,28);ctx.fillStyle='#87a69a';ctx.fillRect(x-4,GY-31,90,7);
+    for(let j=0;j<5;j++){const sway=Math.sin(time*1.4+x+j)*4;ctx.strokeStyle='#2f6946';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(x+14+j*13,GY-30);ctx.quadraticCurveTo(x+8+j*14+sway,GY-70-j*7,x+18+j*12+sway,GY-96-j*6);ctx.stroke();ctx.fillStyle=j%2?'#4f925b':'#69a864';ctx.beginPath();ctx.ellipse(x+18+j*12+sway,GY-98-j*6,18,8,j%2?.6:-.6,0,7);ctx.fill();}
+  }
+
+  // Zone-specific floor markings make progress visually obvious.
+  const floorBands=[[80,720,'WELCOME'],[1080,1760,'BRANCH OFFICE'],[2220,2980,'CANOPY'],[3440,3980,'QUIET →']];
+  for(const f of floorBands){ctx.fillStyle='rgba(235,232,197,.7)';ctx.fillRect(f[0],GY+12,f[1]-f[0],5);txt(f[2],(f[0]+f[1])/2,GY+36,12,'rgba(236,240,219,.78)',FB);}
+
   if(deptBridge){
     ctx.globalAlpha=deptBridge.t;ctx.fillStyle='#6d4d35';ctx.fillRect(deptBridge.x,deptBridge.y,deptBridge.w,deptBridge.h);
     ctx.fillStyle='#d5be87';for(let x=deptBridge.x+8;x<deptBridge.x+deptBridge.w;x+=28)ctx.fillRect(x,deptBridge.y+3,18,8);ctx.globalAlpha=1;
   }
   for(const e of deptElevators){
-    ctx.fillStyle='#667c73';ctx.fillRect(e.x,e.y,e.w,e.h);ctx.fillStyle='#79a85d';
-    for(let i=0;i<e.leaves;i++){const x=e.x+10+(i*37)%Math.max(20,e.w-20);ctx.beginPath();ctx.ellipse(x,e.y-5-(i%3)*7,13,6,(i%2?.4:-.4),0,7);ctx.fill();}
-    txt(e.mark||'PENDING',e.x+e.w/2,e.y-24,12,e.mark==='APPROVED'?C.teal:e.mark==='FORBIDDEN'?C.ketchup:C.ink,FB);
+    // Transparent lift shaft, brass rails, root-wrapped platform and status lamp.
+    ctx.fillStyle='rgba(197,225,213,.18)';ctx.strokeStyle='rgba(80,117,105,.7)';ctx.lineWidth=3;ctx.fillRect(e.x-8,e.top-18,e.w+16,e.base-e.top+40);ctx.strokeRect(e.x-8,e.top-18,e.w+16,e.base-e.top+40);
+    ctx.strokeStyle='#9a7d47';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(e.x+14,e.top-12);ctx.lineTo(e.x+14,e.base+18);ctx.moveTo(e.x+e.w-14,e.top-12);ctx.lineTo(e.x+e.w-14,e.base+18);ctx.stroke();
+    const pg=ctx.createLinearGradient(0,e.y-8,0,e.y+e.h);pg.addColorStop(0,'#9eb3a8');pg.addColorStop(1,'#405b52');ctx.fillStyle=pg;ctx.fillRect(e.x,e.y,e.w,e.h);ctx.strokeStyle='#263f38';ctx.strokeRect(e.x,e.y,e.w,e.h);
+    ctx.fillStyle='#79a85d';for(let i=0;i<e.leaves;i++){const x=e.x+10+(i*37)%Math.max(20,e.w-20);ctx.beginPath();ctx.ellipse(x,e.y-5-(i%3)*7,15,7,(i%2?.4:-.4),0,7);ctx.fill();}
+    const active=e.mark==='APPROVED';ctx.fillStyle=active?'#7ee2ac':e.mark==='FORBIDDEN'?C.ketchup:C.mustard;ctx.beginPath();ctx.arc(e.x+e.w/2,e.y-40,7,0,7);ctx.fill();
+    txt(e.mark||'PENDING',e.x+e.w/2,e.y-24,12,active?C.teal:e.mark==='FORBIDDEN'?C.ketchup:C.ink,FB);
   }
   if(deptCabinet){
-    const d=deptCabinet;ctx.fillStyle='#56736b';ctx.fillRect(d.x,d.y,d.w,d.h);ctx.strokeStyle='#263f38';ctx.strokeRect(d.x,d.y,d.w,d.h);
-    for(let y=d.y+12;y<d.y+75;y+=27){ctx.fillStyle='#d8e1dc';ctx.fillRect(d.x+8,y,d.w-16,19);ctx.fillStyle='#263f38';ctx.fillRect(d.x+28,y+7,16,3);}
-    txt(d.mark||'RIVER',d.x+d.w/2,d.y-12,12,d.mark==='FORBIDDEN'?C.ketchup:C.paper,FB);
+    const d=deptCabinet;ctx.fillStyle='rgba(30,65,59,.22)';ctx.fillRect(d.x-34,d.y-28,d.w+68,d.h+28);
+    ctx.fillStyle='#2e4c47';ctx.fillRect(d.x-28,d.y-23,d.w+56,19);txt('HYDROLOGICAL RECORDS',d.x+d.w/2,d.y-10,10,C.paper,FB);
+    const metal=ctx.createLinearGradient(d.x,0,d.x+d.w,0);metal.addColorStop(0,'#3f5c55');metal.addColorStop(.5,'#769188');metal.addColorStop(1,'#405b54');ctx.fillStyle=metal;ctx.fillRect(d.x,d.y,d.w,d.h);ctx.strokeStyle='#263f38';ctx.lineWidth=3;ctx.strokeRect(d.x,d.y,d.w,d.h);
+    for(let y=d.y+12;y<d.y+75;y+=27){ctx.fillStyle='#d8e1dc';ctx.fillRect(d.x+8,y,d.w-16,19);ctx.fillStyle='#263f38';ctx.fillRect(d.x+25,y+7,22,4);ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(d.x+10,y+2,d.w-20,2);}
+    txt(d.mark||'RIVER',d.x+d.w/2,d.y-38,12,d.mark==='FORBIDDEN'?C.ketchup:C.paper,FB);
   }
   for(const p of deptPapers){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.sin(time*2+p.x)*.25);ctx.fillStyle=C.paper;ctx.fillRect(-8,-11,16,22);ctx.strokeStyle='#61736d';ctx.strokeRect(-8,-11,16,22);ctx.restore();}
 
