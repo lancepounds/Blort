@@ -10,8 +10,9 @@ You play **General Mustardseed Gumbo**, a sentient whistle-shaped sock, on his w
 
 Open `index.html` in any modern web browser. There is nothing to install.
 
-Once GitHub Pages is turned on for this repository, the game is also playable at:
-`https://<your-username>.github.io/<repository-name>/`
+Play online: **https://lancepounds.github.io/Blort/**
+
+Jump to the new level's selection: **https://lancepounds.github.io/Blort/#large-small-desert**
 
 ## Levels
 
@@ -20,6 +21,10 @@ Once GitHub Pages is turned on for this repository, the game is also playable at
 | **1-1 Permit to Toast** | The Municipal Breakfast District. Whistle Blast, the two-ink Official Stamp, the Apology Crab, Deputy Spoons, and the mini-boss Deputy Spoon Prime. |
 | **1-2 The Annex of Unnecessary Confrontations** | Sock Stretch, Emergency Pocket, and four mini-bosses: Baron von Lint, Chairman Waffle, General Crumb, and Form 1040-Ω. |
 | **2-1 The Department of Outdoor Indoors** | A forest inside an office building. Approve leafy elevators, forbid a filing cabinet to file its river, dodge Ceiling Horses and their falling office supplies, silence Loud Rectangles while they shout procedural instructions, defeat the Executive Loud Rectangle during Quiet Hours, and exit into Tuesday. |
+| **3-1 Tuesday** | Treat a weekday as a place. Whistle three clocks past lunch, evade the newly impatient clouds, and locate Wednesday. |
+| **4-1 The Large Small Desert** | Giant cardboard mesas, three folding horizons, increasingly wide ravines, and tumbleweed paperwork. Stamp each hinge APPROVED, walk onto the unfolded approach, then use Sock Stretch at its striped handle. Whistle stops the fans and pauses the rolling forms; FORBIDDEN ink parks the forms. Reach the small exit after all three approvals. |
+
+Every completion screen offers **Play This Level Again** and **Return to Level Select**. Tuesday now continues into the desert. The desert starts with the Official Stamp and Sock Stretch, so it can also be played directly from level select. Checkpoints follow each ravine, and horizon approvals persist after falls.
 
 ## Controls
 
@@ -64,3 +69,5 @@ This is a vertical slice built from the BLORT Planned Unit / Game Development Do
 - 1-2 The Annex — four unnecessary confrontations
 - 2-1 Outdoor Indoors — office forest and filing-cabinet river
 - 3-1 Tuesday — whistle three clocks past lunch, evade impatient clouds, and locate Wednesday
+- 4-1 The Large Small Desert — unfold the horizon, stretch across ravines, and use the small exit
+

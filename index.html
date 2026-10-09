@@ -126,6 +126,11 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .character-card ul{font-size:17px;gap:9px;margin:16px 0 22px}
 .character-card .btn{display:block;margin:0 auto;font-family:var(--body);font-size:17px;min-height:48px;border-radius:8px}
 #whoGumbo{font-family:var(--body);font-size:16px;min-height:46px;border-radius:8px}
+#titleScreen,#winScreen{overflow-y:auto;justify-content:flex-start;padding:18px;gap:10px}
+#titleScreen h2{font-size:clamp(32px,5vw,48px)}
+#titleScreen .modes[aria-label="Choose a level"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:min(880px,100%);gap:8px}
+#titleScreen .tog{padding:8px 12px}
+@media(max-width:600px){#titleScreen .modes[aria-label="Choose a level"]{grid-template-columns:1fr 1fr}#titleScreen{padding:12px}}
 </style>
 </head>
 <body>
@@ -142,15 +147,16 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
   <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
-      <span class="tag">Planned Unit 12 · Recommended Vertical Slice</span>
+      <span class="tag" id="titleTag">Planned Unit 12 · Recommended Vertical Slice</span>
       <h2>BLORT</h2>
-      <p>You are General Mustardseed Gumbo, a sentient whistle-shaped sock. Breakfast ends when approved. Go right.</p>
+      <p id="titleIntro">You are General Mustardseed Gumbo, a sentient whistle-shaped sock. Breakfast ends when approved. Go right.</p>
       <button class="btn alt" id="whoGumbo" type="button" aria-haspopup="dialog">Who is General Mustardseed Gumbo?</button>
       <div class="modes" role="group" aria-label="Choose a level">
         <button class="tog" data-level="1" aria-pressed="true">1-1 Permit to Toast</button>
         <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span></button>
         <button class="tog" data-level="3" aria-pressed="false">2-1 Outdoor Indoors<span>Office forest, leafy elevators, filing-cabinet river</span></button>
         <button class="tog" data-level="4" aria-pressed="false">3-1 Tuesday<span>Set three clocks after lunch, survive the impatient clouds, reach Wednesday</span></button>
+        <button class="tog" data-level="5" aria-pressed="false">4-1 The Large Small Desert<span>Unfold cardboard horizons, stretch across ravines, dodge tumbleweed paperwork</span></button>
       </div>
       <div class="modes">
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
@@ -454,7 +460,7 @@ function mkCrab(minX,maxX,top){ return {x:minX+30,y:top-26,w:44,h:26,minX,maxX,d
 
 function reset(full){
   if(full){
-    if(LEVEL === 4) build4(); else if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
+    if(LEVEL === 5) build5(); else if(LEVEL === 4) build4(); else if(LEVEL === 3) build3(); else if(LEVEL === 2) build2(); else build();
     buildEnvironment(LEVEL);
     deaths = 0; achievements = new Set(); hasStamp = LEVEL >= 2; levelTime = 0; stampMode = 'APPROVED';
     respawn = LEVEL === 1 ? {x:130,y:GY-40,first:true} : {x:80,y:GY-40,first:false};
@@ -488,6 +494,7 @@ function solids(){
   if(deptExit && !deptExit.open) s.push(deptExit);
   }
   if(LEVEL === 4){for(const g of tuesdayGates)if(!g.open)s.push(g);if(tuesdayExit&&!tuesdayExit.open)s.push(tuesdayExit);}
+  if(LEVEL === 5){for(const p of desertPanels)if(p.open)s.push(p);if(desertExit&&!desertExit.open)s.push(desertExit);}
   if(LEVEL === 2){
     if(annexDoor && (!annexDoor.open || annexDoor.t < .5)) s.push(annexDoor);
     for(const a of arenas){
@@ -538,6 +545,7 @@ let handles = [], dispensers = [], pickups2 = [], annexDoor = null, arenas = [],
 let stretchFx = null, zip = null;
 let deptElevators = [], deptCabinet = null, deptBridge = null, deptExit = null, deptPapers = [], ceilingHorses = [], horseDrops = [], loudRectangles = [], deptBoss = null, soundWaves = [], environmentProps = [];
 let tuesdayClocks=[],tuesdayGates=[],impatientClouds=[],timeDrops=[],tuesdayExit=null;
+let desertPanels=[],desertFans=[],tumbleForms=[],desertExit=null;
 const ITEMS = {
   duck:   {name:'Rubber Duck',   use:'throw it'},
   helium: {name:'Helium Toast',  use:'float upward'},
@@ -548,6 +556,7 @@ function clearLevel2(){
   hasStretch = false; hasPocket = false; pocketItem = null;
   handles = []; dispensers = []; pickups2 = []; annexDoor = null; arenas = []; hz = []; ducks = []; exit2 = null;
   stretchFx = null; zip = null;
+  desertPanels=[];desertFans=[];tumbleForms=[];desertExit=null;
 }
 
 function build2(){
@@ -693,6 +702,208 @@ function update4(dt){
  for(const d of timeDrops){d.vy+=780*dt;d.y+=d.vy*dt;if(Math.hypot(d.x-pcx(),d.y-pcy())<28){d.dead=true;if(SET.nofail){P.vy=-420;P.vx+=(P.x<d.x?-1:1)*160;floatText('MEETING POSTPONED',d.x,d.y,C.tealDark);}else return die();}}timeDrops=timeDrops.filter(d=>!d.dead&&d.y<GY+30);if(tuesdayExit.open&&ov(P,tuesdayExit))winLevel();
 }
 
+/* ================= WORLD 4-1: THE LARGE SMALL DESERT ================= */
+function build5(){
+  clearLevel2(); LEVEL_W=6200; hasStretch=true;
+  statics=[
+    {x:0,y:GY,w:1120,h:100,k:'sand'},
+    {x:1470,y:GY,w:1200,h:100,k:'sand'},
+    {x:3140,y:GY,w:1240,h:100,k:'sand'},
+    {x:4970,y:GY,w:1230,h:100,k:'sand'},
+    {x:540,y:330,w:150,h:22,k:'sandstone'},
+    {x:735,y:245,w:160,h:24,k:'sandstone'},
+    {x:1870,y:335,w:170,h:22,k:'sandstone'},
+    {x:3500,y:330,w:150,h:22,k:'sandstone'},
+    {x:3700,y:245,w:170,h:24,k:'sandstone'},
+    {x:5380,y:335,w:170,h:22,k:'sandstone'},
+    {x:-20,y:0,w:20,h:H,k:'wall'},
+    {x:LEVEL_W,y:0,w:20,h:H,k:'wall'}
+  ];
+  // Park the breakfast machinery; the desert has its own crossings and exit.
+  gate={x:-9999,y:-9999,w:1,h:1,open:true,t:9};
+  bridge={x:-9999,y:-9999,w:1,h:1,toasted:true,unaffected:false,tt:1};
+  stamp={x:-9999,y:-9999,got:true};
+  lift={x:-9999,y:GY,w:1,h:1,state:'pending',top:0,mark:null};
+  barrier={x:-9999,y:-9999,w:1,h:1,down:true,t:9,mark:null};
+  crabs=[];spoons=[];spCites=[];cones=[];cabinets=[];cites=[];
+  boss={state:'gone',hp:0,x:-9999,y:-9999,t:0,fire:0,flash:0,pending:false,droop:0};
+  exitDoor={open:false,t:0,done:false,applause:0};
+  deptElevators=[];deptCabinet=null;deptBridge=null;deptExit=null;deptBoss=null;
+  deptPapers=[];ceilingHorses=[];horseDrops=[];loudRectangles=[];soundWaves=[];
+  tuesdayClocks=[];tuesdayGates=[];impatientClouds=[];timeDrops=[];tuesdayExit=null;
+  desertPanels=[
+    {x:1120,y:GY,w:140,h:18,end:1470,switchX:1010,open:false,t:0,k:'sandbridge'},
+    {x:2670,y:GY,w:230,h:18,end:3140,switchX:2560,open:false,t:0,k:'sandbridge'},
+    {x:4380,y:GY,w:320,h:18,end:4970,switchX:4270,open:false,t:0,k:'sandbridge'}
+  ];
+  handles=desertPanels.map((p,i)=>({x:p.x+p.w-35,y:GY-85,to:p.end+65,panel:i}));
+  desertFans=[{x:1990,quiet:false,t:0},{x:3570,quiet:false,t:1},{x:5370,quiet:false,t:2}];
+  tumbleForms=[
+    {x:2200,min:1800,max:2410,dir:-1,state:'patrol',t:1.2,rot:0,stun:0,frozen:false},
+    {x:3990,min:3350,max:4050,dir:-1,state:'patrol',t:1.2,rot:0,stun:0,frozen:false},
+    {x:5720,min:5230,max:5770,dir:-1,state:'patrol',t:1.2,rot:0,stun:0,frozen:false}
+  ];
+  desertExit={x:6020,y:GY-138,w:100,h:138,open:false,done:false};
+  collect=[[280,400],[580,292],[780,208],[1225,390],[1630,400],[1940,295],
+    [2370,400],[2810,396],[3270,400],[3540,292],[3790,205],[4010,400],
+    [4580,396],[5070,400],[5430,295],[5840,400]].map(p=>({t:'yawn',x:p[0],y:p[1],got:false}));
+  collect.push({t:'form',x:845,y:207,got:false,name:'Form SIZE-0: Application to Be Enormous'},
+    {t:'form',x:3840,y:207,got:false,name:'Form SAND: Declaration of Individual Grains'},
+    {t:'button',x:5530,y:297,got:false},{t:'nothing',x:6100,y:400,got:false});
+  checkpoints=[{x:80,on:true},{x:1510,on:false},{x:3180,on:false},{x:5010,on:false},{x:5830,on:false}];
+  eggs=[
+    {x:380,line:'The desert is enormous. The permit is pocket-sized.',sir:'SIR! Stamp APPROVED at each hinge, then press Stretch by its striped handle, sir!'},
+    {x:1730,line:'A tumbleweed made of forms. It has requested permission to roll.',sir:'SIR! Whistle pauses the forms. FORBIDDEN ink parks them, sir!'},
+    {x:5150,line:'The giant exit was downsized. Use the small one.',sir:'SIR! All three horizons must be approved. Then go right, sir!'}
+  ];
+  signs=[
+    {x:90,y:285,w:240,h:64,lines:['THE LARGE SMALL DESERT','SIZE: UNDER REVIEW'],c:C.tealDark},
+    {x:805,y:270,w:225,h:72,lines:['1. STAMP APPROVED AT HINGE','2. WALK ON UNFOLDED PATH','3. STRETCH BY STRIPED HANDLE'],c:C.tealDark},
+    {x:2120,y:265,w:240,h:62,lines:['ROLLING PAPERWORK AHEAD','WHISTLE TO PAUSE IT'],c:C.ketchup},
+    {x:2340,y:282,w:190,h:56,lines:['HORIZON 2','SAME RULE. LARGER GAP.'],c:C.tealDark},
+    {x:4060,y:280,w:210,h:56,lines:['HORIZON 3','AUTHORIZED SOCK LENGTH'],c:C.tealDark},
+    {x:5650,y:264,w:255,h:62,lines:['PARADE PREPARATION ANNEX','USE THE SMALL EXIT →'],c:C.tealDark}
+  ];
+  triggers=[
+    {x:600,done:false,fn:()=>announce('THIS LANDSCAPE IS CARDBOARD. STAMP APPROVED TO UNFOLD EACH HORIZON.')},
+    {x:1590,done:false,fn:()=>announce('FIRST RAVINE CROSSED. THE DESERT HAS REQUESTED A SMALLER DESCRIPTION.')},
+    {x:3250,done:false,fn:()=>announce('THE WARNING SIGNS ARE TINY. THEIR CONCERNS ARE NOT.')},
+    {x:5100,done:false,fn:()=>announce('THE LARGE EXIT IS DECORATIVE. THE SMALL EXIT HAS A JOB.')}
+  ];
+}
+function stampDesert(A,x,y,col){
+  const p=desertPanels.find(q=>Math.abs(q.switchX-x)<reach(130)&&Math.abs(GY-55-y)<120);
+  if(p){
+    stampFx(p.switchX,GY-60);
+    if(!A){floatText(p.open?'APPROVED CROSSINGS STAY OPEN':'Switch ink to APPROVED, then stamp.',p.switchX,GY-115,col);return true;}
+    if(!p.open){
+      p.open=true;burst(p.x,GY-20,18,[C.mustard,C.paper,C.crumb],130);
+      floatText('HORIZON UNFOLDED · STRETCH AT HANDLE',p.switchX,GY-115,col);
+      tone(270,.25,'triangle',.05,700);achieve('Approved a Piece of the Horizon');
+    }else floatText('HORIZON ALREADY APPROVED',p.switchX,GY-115,col);
+    return true;
+  }
+  const fan=desertFans.find(q=>Math.abs(q.x-x)<reach(105)&&Math.abs(GY-55-y)<140);
+  const f=tumbleForms.find(q=>Math.abs(q.x-x)<reach(105)&&Math.abs(GY-22-y)<100);
+  if(f&&(!fan||Math.abs(f.x-x)<Math.abs(fan.x-x))){f.frozen=!A;f.stun=A?0:99;stampFx(f.x,GY-22);floatText(A?'ROLLING APPROVED':'PAPERWORK PARKED',f.x,GY-72,col);return true;}
+  if(fan){fan.quiet=!A;stampFx(fan.x,GY-65);floatText(A?'BREEZE APPROVED':'WIND PERMIT REVOKED',fan.x,GY-140,col);return true;}
+  return false;
+}
+function whistleDesert(){
+  let hit=false;
+  for(const fan of desertFans)if(Math.abs(fan.x-pcx())<reach(240)){
+    hit=true;fan.quiet=true;floatText('BREEZE ON A BREAK',fan.x,GY-145,C.tealDark);burst(fan.x,GY-65,8,[C.paper,C.teal],80);
+  }
+  for(const f of tumbleForms)if(Math.hypot(f.x-pcx(),GY-22-pcy())<reach(240)){
+    hit=true;f.stun=4;f.state='patrol';f.t=1.2;floatText('PLEASE HOLD',f.x,GY-65,C.tealDark);
+  }
+  return hit;
+}
+function desertHint(){
+  const p=desertPanels.find(q=>!q.open&&Math.abs(q.switchX-pcx())<reach(180));
+  if(p)return stampMode==='APPROVED'?'Stamp / C: unfold the horizon':'Ink / V: switch to APPROVED';
+  const h=handles.find(q=>desertPanels[q.panel].open&&Math.abs(q.x-pcx())<reach(185)&&pcx()<desertPanels[q.panel].end);
+  if(h)return 'Stretch / S: cross to the striped handle';
+  const f=tumbleForms.find(q=>!q.frozen&&q.stun<=0&&Math.abs(q.x-pcx())<reach(220));
+  if(f)return 'Whistle / X: pause rolling paperwork';
+  const fan=desertFans.find(q=>!q.quiet&&Math.abs(q.x-pcx())<reach(180));
+  if(fan)return 'Whistle / X: stop the breeze';
+  return null;
+}
+function update5(dt){
+  if(stretchFx){stretchFx.t+=dt;if(stretchFx.t>.45)stretchFx=null;}
+  if(pressed.has('stretch'))doStretch();
+  for(const p of desertPanels)p.t=Math.min(1,p.t+(p.open?dt*2.6:0));
+  for(const fan of desertFans){
+    fan.t+=dt*(fan.quiet?.3:5);
+    // Gusts have a visible lane and stay on safe ground, away from ravines.
+    if(!fan.quiet&&!zip&&Math.abs(pcx()-fan.x)<200&&P.y+P.h>GY-125)P.vx+=65*dt;
+  }
+  for(const f of tumbleForms){
+    if(f.frozen)continue;
+    if(f.stun>0){f.stun=Math.max(0,f.stun-dt);continue;}
+    f.t-=dt;
+    if(f.state==='patrol'){
+      f.x+=f.dir*40*dt;
+      if(Math.abs(f.x-pcx())<280&&Math.abs(GY-22-pcy())<100&&f.t<=0){f.state='warn';f.t=.85;f.dir=Math.sign(pcx()-f.x)||1;tone(330,.1,'triangle',.035);}
+    }else if(f.state==='warn'&&f.t<=0){f.state='roll';f.t=1.4;}
+    else if(f.state==='roll'){
+      f.x+=f.dir*170*dt;f.rot+=f.dir*7*dt;
+      if(f.t<=0){f.state='patrol';f.t=1.3;}
+    }
+    if(f.x<f.min||f.x>f.max){f.x=Math.max(f.min,Math.min(f.max,f.x));f.dir*=-1;f.state='patrol';f.t=1.3;}
+    if(f.state==='roll'&&!zip&&P.inv<=0&&ov(P,{x:f.x-23,y:GY-44,w:46,h:44})){
+      f.stun=2;die();if(state!=='play')return;
+    }
+  }
+  desertExit.open=desertPanels.every(p=>p.open);
+  if(desertExit.open&&!zip&&ov(P,desertExit))winLevel();
+}
+function drawDesertBack(){
+  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#b85b54');sky.addColorStop(.48,'#edb181');sky.addColorStop(1,'#f9e2ae');
+  ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+  const sunX=790-camX*.035;ctx.fillStyle='#ffe1a0';ctx.beginPath();ctx.arc(sunX,133,61,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#a75d44';ctx.lineWidth=3;ctx.stroke();txt('SUN',sunX,130,19,'#9d593e',FD);txt('ACTUAL SIZE',sunX,151,10,'#9d593e',FB);
+  for(let layer=0;layer<2;layer++){
+    const step=layer?430:600,factor=layer?.24:.1;
+    for(let i=-1;i<5;i++){
+      const x=i*step-((camX*factor)%step),base=layer?386:315,top=base-(layer?175:125)-(i%2)*25;
+      ctx.fillStyle=layer?'#b76e50':'#cf8966';ctx.beginPath();ctx.moveTo(x-80,base);ctx.lineTo(x+18,top+30);ctx.lineTo(x+28,top);ctx.lineTo(x+145,top+8);ctx.lineTo(x+158,top+46);ctx.lineTo(x+240,base);ctx.closePath();ctx.fill();
+      ctx.strokeStyle=layer?'#9b5c45':'#bb785c';ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(x+28,top+10);ctx.lineTo(x+60,base);ctx.moveTo(x+130,top+12);ctx.lineTo(x+196,base);ctx.stroke();
+    }
+  }
+  // A visibly scored cardboard horizon, rather than a seamless mountain range.
+  ctx.strokeStyle='rgba(113,65,42,.38)';ctx.lineWidth=2;ctx.setLineDash([12,7]);ctx.beginPath();ctx.moveTo(0,388);ctx.lineTo(W,388);ctx.stroke();ctx.setLineDash([]);
+  for(let i=0;i<8;i++){const x=((i*169-time*18-camX*.12)%(W+200)+(W+200))%(W+200)-100;ctx.strokeStyle='rgba(255,244,218,.3)';ctx.beginPath();ctx.moveTo(x,210+i%3*47);ctx.lineTo(x+53,208+i%3*47);ctx.stroke();}
+}
+function drawDesertScenery(){
+  for(const [x,w,h] of [[550,380,245],[2080,330,260],[3680,370,300],[5530,320,220]]){
+    ctx.fillStyle='#af6240';ctx.beginPath();ctx.moveTo(x-w/2,GY);ctx.lineTo(x-w*.25,GY-h+35);ctx.lineTo(x-w*.2,GY-h);ctx.lineTo(x+w*.2,GY-h+8);ctx.lineTo(x+w*.28,GY-h+48);ctx.lineTo(x+w/2,GY);ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#74472e';ctx.lineWidth=4;ctx.stroke();ctx.fillStyle='#d29158';
+    for(let y=GY-h+68;y<GY-35;y+=38)ctx.fillRect(x-w*.23,y,w*.46,5);
+    ctx.strokeStyle='#e0b280';ctx.lineWidth=2;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(x, GY-h+15);ctx.lineTo(x+24,GY-18);ctx.stroke();ctx.setLineDash([]);
+    txt('CARDBOARD',x,GY-h+49,12,'#ffdfae',FB);
+  }
+  // The absurdly large door is background decoration. The small exit is solidly outlined.
+  ctx.fillStyle='#ad6548';rr(5860,GY-280,255,280,90);ctx.fill();ctx.strokeStyle='#774a36';ctx.lineWidth=5;ctx.stroke();
+  txt('CEREMONIAL',5987,GY-205,18,C.paper,FD);txt('NO ENTRY',5987,GY-178,14,C.paper,FB);
+}
+function drawDesertFront(){
+  for(let i=0;i<desertPanels.length;i++){
+    const p=desertPanels[i],a=p.open?p.t:0;
+    ctx.save();ctx.translate(p.x,GY);ctx.rotate(-Math.PI/2*(1-a));
+    ctx.fillStyle='#deb775';ctx.fillRect(0,0,p.w,p.h);ctx.strokeStyle='#614631';ctx.lineWidth=3;ctx.strokeRect(0,0,p.w,p.h);
+    ctx.fillStyle='#b18148';for(let x=8;x<p.w;x+=15)ctx.fillRect(x,4,3,10);
+    ctx.strokeStyle='#f8dfaa';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(2,-2);ctx.lineTo(p.w,-2);ctx.stroke();ctx.restore();
+    ctx.fillStyle=p.open?C.tealDark:'#755344';ctx.fillRect(p.switchX-28,GY-68,56,68);ctx.strokeStyle=C.paper;ctx.lineWidth=2;ctx.strokeRect(p.switchX-24,GY-64,48,34);
+    txt(p.open?'✓':String(i+1),p.switchX,GY-47,23,p.open?'#b8f2d1':C.paper,FD);
+    txt(p.open?'APPROVED':'STAMP',p.switchX,GY-18,10,C.paper,FB);
+    const h=handles[i];ctx.save();ctx.globalAlpha=p.open?1:.28;ctx.strokeStyle='#67482e';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(p.end+30,GY);ctx.lineTo(p.end+30,GY-136);ctx.lineTo(h.x,GY-136);ctx.lineTo(h.x,h.y-10);ctx.stroke();
+    ctx.fillStyle=C.mustard;rr(h.x-24,h.y-9,48,18,9);ctx.fill();ctx.strokeStyle='#4e3425';ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle=C.ketchup;for(let x=-14;x<20;x+=11)ctx.fillRect(h.x+x,h.y-6,4,12);ctx.restore();
+    if(p.open){ctx.fillStyle=C.night;rr(h.x-46,h.y-48,92,27,6);ctx.fill();txt('STRETCH',h.x,h.y-34,13,C.paper,FB);}
+    const ravineX=p.x+(p.end-p.x)/2;ctx.fillStyle='#5b3c32';rr(ravineX-53,GY+55,106,26,6);ctx.fill();txt('RAVINE '+(i+1),ravineX,GY+68,14,C.paper,FB);
+  }
+  for(const f of desertFans){
+    ctx.strokeStyle='#664732';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(f.x,GY);ctx.lineTo(f.x,GY-88);ctx.stroke();
+    ctx.save();ctx.translate(f.x,GY-88);ctx.rotate(f.t);for(let i=0;i<4;i++){ctx.rotate(Math.PI/2);ctx.fillStyle=f.quiet?'#a3bca4':'#ead8aa';ctx.fillRect(7,-8,30,16);ctx.strokeStyle='#664732';ctx.lineWidth=2;ctx.strokeRect(7,-8,30,16);}ctx.fillStyle='#664732';ctx.beginPath();ctx.arc(0,0,9,0,7);ctx.fill();ctx.restore();
+    if(!f.quiet){ctx.strokeStyle='rgba(255,242,195,.7)';ctx.lineWidth=2;for(let i=0;i<4;i++){const x=f.x-90+((time*90+i*43)%180);ctx.beginPath();ctx.moveTo(x,GY-39-i*13);ctx.lineTo(x+35,GY-41-i*13);ctx.stroke();}}
+    ctx.fillStyle='#513b2c';rr(f.x-73,GY-157,146,25,6);ctx.fill();txt(f.quiet?'ON BREAK':'WHISTLE FOR CALM',f.x,GY-144,11,C.paper,FB);
+  }
+  for(const f of tumbleForms){
+    const quiet=f.frozen||f.stun>0;ctx.save();ctx.translate(f.x+(f.state==='warn'&&!quiet?Math.sin(time*28)*3:0),GY-23);ctx.rotate(f.rot);
+    ctx.strokeStyle=quiet?'#476a52':'#795334';ctx.lineWidth=3;ctx.fillStyle=quiet?'#d5dbc0':'#f9dfb2';
+    for(let i=0;i<6;i++){ctx.rotate(Math.PI/3);ctx.fillRect(-19,-15,32,22);ctx.strokeRect(-19,-15,32,22);ctx.fillStyle='#b18c58';ctx.fillRect(-13,-9,19,2);ctx.fillRect(-13,-4,14,2);ctx.fillStyle=quiet?'#d5dbc0':'#f9dfb2';}
+    ctx.restore();if(f.state==='warn'&&!quiet)bubble('ROLLING IN . . .',f.x,GY-83,C.ketchup);
+    if(quiet)txt(f.frozen?'PARKED':'ON HOLD',f.x,GY-66,11,C.tealDark,FB);
+  }
+  if(desertExit){const e=desertExit;ctx.fillStyle=e.open?'#276c60':'#674631';rr(e.x,e.y,e.w,e.h,9);ctx.fill();ctx.strokeStyle='#ffe8b6';ctx.lineWidth=4;ctx.stroke();
+    txt('SMALL EXIT',e.x+e.w/2,e.y+25,12,C.paper,FB);txt(e.open?'OPEN →':'3 PERMITS',e.x+e.w/2,e.y+57,13,e.open?'#b8f2d1':C.mustard,FB);
+    ctx.fillStyle=C.mustard;ctx.beginPath();ctx.arc(e.x+e.w-16,e.y+88,5,0,7);ctx.fill();}
+}
+
 function update3(dt){
   for(const e of deptElevators){
     const oldY=e.y, riding=P&&P.ground&&P.x+P.w>e.x&&P.x<e.x+e.w&&Math.abs(P.y+P.h-oldY)<8;
@@ -793,6 +1004,9 @@ function buildEnvironment(level){
   ]:level===3?[
     p('shrub',570,{label:'EMPLOYEE SHRUB'}),p('vent',1540,{label:'CANOPY VENT'}),
     p('drawer',2440,{label:'LEAF RECORDS'}),p('chair',3650,{min:3520,max:3890,label:'ROLLING REVIEW'})
+  ]:level===5?[
+    p('drawer',420,{label:'GRAIN ARCHIVE'}),p('shrub',1650,{label:'CIVIL SERVICE CACTUS'}),
+    p('drawer',3320,{label:'SIZE APPEALS'}),p('chair',5620,{min:5570,max:5790,label:'DESERT SEATING'})
   ]:[p('chair',1740,{min:1600,max:2020,label:'LUNCH CHAIR'}),p('vent',3000,{label:'TIME VENT'}),p('drawer',4400,{label:'TOMORROW FILES'})];
 }
 function nearbyEnvironment(range=130){return environmentProps.find(q=>Math.abs(q.x-pcx())<reach(range)&&Math.abs((q.y-25)-pcy())<150);}
@@ -844,6 +1058,10 @@ function drawEnvironment(){
       for(let i=0;i<2;i++){const yy=q.y-h+7+i*22,off=q.open&&i===0?18:0;ctx.fillStyle='#dce3df';ctx.fillRect(q.x-21+off,yy,42,17);ctx.fillStyle='#354943';ctx.fillRect(q.x-6+off,yy+7,12,3);}
       if(q.open){ctx.fillStyle=C.paper;ctx.fillRect(q.x-13,q.y-h-12,26,17);}
     }else{
+      if(LEVEL===5){
+        const shake=q.t>0?Math.sin(time*20)*3:0;ctx.save();ctx.translate(q.x+shake,q.y);ctx.fillStyle='#426e57';rr(-10,-104,20,104,8);ctx.fill();rr(-36,-70,26,15,7);ctx.fill();rr(-36,-90,13,34,6);ctx.fill();rr(10,-52,29,15,7);ctx.fill();rr(26,-80,13,41,6);ctx.fill();ctx.strokeStyle='#a5c394';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-2,-90);ctx.lineTo(-2,-6);ctx.stroke();ctx.fillStyle=C.paper;ctx.fillRect(-18,-31,36,20);txt('STAFF',0,-20,9,C.tealDark,FB);ctx.restore();
+        if(q.mark)inkMark(q.mark,q.x,q.y-37,.55);continue;
+      }
       const shake=q.t>0?Math.sin(time*30)*5:0;ctx.fillStyle=LEVEL===1?'#8a5b25':'#405b52';ctx.fillRect(q.x-31,q.y-25,62,25);
       for(let i=0;i<5;i++){ctx.strokeStyle=LEVEL===1?'#9f712c':'#326b48';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(q.x-22+i*11,q.y-25);ctx.quadraticCurveTo(q.x-30+i*14+shake,q.y-55,q.x-20+i*12+shake,q.y-76-i%2*12);ctx.stroke();ctx.fillStyle=LEVEL===1?'#d5a449':'#68a261';ctx.beginPath();ctx.ellipse(q.x-20+i*12+shake,q.y-78-i%2*12,16,7,i%2?.6:-.6,0,7);ctx.fill();}
     }
@@ -1082,7 +1300,7 @@ function activeArena(){ return arenas.find(a => a.state==='intro' || a.state==='
 
 /* ---------- abilities ---------- */
 function stretchTargets(){
-  const list = handles.map(h => ({x:h.x, y:h.y, grab(){ grabHandle(h); }}));
+  const list = handles.filter(h=>LEVEL!==5||desertPanels[h.panel].open).map(h => ({x:h.x, y:h.y, grab(){ grabHandle(h); }}));
   const a = activeArena();
   if(a && a.state==='fight' && a.b.stretchT){ const t = a.b.stretchT(); if(t) list.push(t); }
   return list;
@@ -1609,7 +1827,7 @@ function update(dt){
   for(const r of rings){ r.t += dt; } rings = rings.filter(r=>r.t<.45);
 
   if(state === 'dead'){ deadT -= dt; if(deadT <= 0){ state='play'; spawnPlayer(); } pressed.clear(); return; }
-  if(state === 'win'){ winT += dt; exitDoor.applause += dt; if(Math.random()<.5){const wx=LEVEL===1?4960:LEVEL===2?exit2.x+20:LEVEL===3?deptExit.x:tuesdayExit.x;burst(wx+Math.random()*80-40,(LEVEL===1?150:280)+Math.random()*60,2,[C.mustard,C.ketchup,C.teal,C.paper],140);} if(winT > 2.6 && document.getElementById('winScreen').hidden) showWin(); pressed.clear(); return; }
+  if(state === 'win'){ winT += dt; exitDoor.applause += dt; if(Math.random()<.5){const wx=LEVEL===1?4960:LEVEL===2?exit2.x+20:LEVEL===3?deptExit.x:LEVEL===4?tuesdayExit.x:desertExit.x;burst(wx+Math.random()*80-40,(LEVEL===1?150:280)+Math.random()*60,2,[C.mustard,C.ketchup,C.teal,C.paper],140);} if(winT > 2.6 && document.getElementById('winScreen').hidden) showWin(); pressed.clear(); return; }
   if(state !== 'play'){ pressed.clear(); return; }
   updateEggQuest();
 
@@ -1701,6 +1919,7 @@ function update(dt){
     }
     if(environmentWhistle())hit=true;
     if(LEVEL===4&&whistleTuesday())hit=true;
+    if(LEVEL===5&&whistleDesert())hit=true;
     if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onWhistle){ a.b.onWhistle(); hit = true; } }
     if(LEVEL === 3){for(const h of ceilingHorses){if(Math.hypot(h.x-pcx(),70-pcy())<reach(360)){h.stun=2.5;h.phase='wait';h.t=2.8;hit=true;floatText('UNSCHEDULED CEILING BREAK',h.x,105,C.tealDark);}}for(const r of loudRectangles){if(Math.abs(r.x+29-pcx())<reach(260)){r.stun=2.8;r.state='quiet';r.t=2.8;hit=true;floatText('VOLUME PERMIT SUSPENDED',r.x+29,r.y-20,C.tealDark);}}
       if(deptBoss&&deptBoss.state==='quiet'&&Math.abs(deptBoss.x+deptBoss.w/2-pcx())<reach(330)){
@@ -1785,6 +2004,7 @@ function update(dt){
   if(LEVEL === 2){ update2(dt); if(state !== 'play'){ pressed.clear(); return; } }
   if(LEVEL === 3){ update3(dt); if(state !== 'play'){ pressed.clear(); return; } }
   if(LEVEL === 4){ update4(dt); if(state !== 'play'){ pressed.clear(); return; } }
+  if(LEVEL === 5){ update5(dt); if(state !== 'play'){ pressed.clear(); return; } }
 
   // --- exit
   if(LEVEL === 1 && (boss.state === 'gone' || boss.state === 'defeated')){
@@ -1817,6 +2037,7 @@ function doAction(){
   }
   if(stampEnvironment(A,x,y,col)) return;
   if(LEVEL === 3 && stampDepartment(A,x,y,col)) return;
+  if(LEVEL === 5 && stampDesert(A,x,y,col)) return;
   if(LEVEL === 2){ const a = activeArena(); if(a && a.state === 'fight' && a.b.onStamp && a.b.onStamp(A, x, y, col)) return; }
   if(boss.state==='fight'){
     const c = cites.find(c=>!c.ret && Math.hypot(c.x-x, c.y-y) < reach(80));
@@ -1910,7 +2131,9 @@ function winLevel(){
   state = 'win'; winT = 0; P.hidden = true; exitDoor.done = true;
   if(LEVEL === 1){ floatText('*thunderous applause for the big door*', 4960, 110, C.paper); achieve('Used the Actual Exit'); }
   else if(LEVEL === 2){ exit2.done = true; floatText('*polite applause from the Annex*', exit2.x+20, 220, C.paper); achieve('Survived the Annex'); }
-  else if(LEVEL===3){deptExit.done=true;floatText('*the indoor forest files a rustling report*',deptExit.x,220,C.paper);achieve('Went Outside Indoors');}else{tuesdayExit.done=true;floatText('*Wednesday reluctantly becomes available*',tuesdayExit.x,220,C.paper);achieve('Completed Tuesday');}
+  else if(LEVEL===3){deptExit.done=true;floatText('*the indoor forest files a rustling report*',deptExit.x,220,C.paper);achieve('Went Outside Indoors');}
+  else if(LEVEL===4){tuesdayExit.done=true;floatText('*Wednesday reluctantly becomes available*',tuesdayExit.x,220,C.paper);achieve('Completed Tuesday');}
+  else{desertExit.done=true;floatText('*the small door receives enormous applause*',desertExit.x,220,C.paper);achieve('Crossed a Large Small Desert');}
   [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.06),i*130));
 }
 function showWin(){
@@ -1920,13 +2143,13 @@ function showWin(){
     `<span>Time <b>${mm}:${ss}</b></span><span>Yawns <b>${y.filter(c=>c.got).length}/${y.length}</b></span><span>Forms <b>${f.filter(c=>c.got).length}/${f.length}</b></span>`+
     `<span>Licenses revoked <b>${deaths}</b></span><span>Loose Buttons <b>${bt.filter(c=>c.got).length}/${bt.length}</b></span><span>Certified Nothing <b>${n.got?'[&#10003;]':'[ ]'}</b></span>`+
     `<span style="grid-column:1/-1">Fake achievements <b>${achievements.size}</b></span>`;
-  document.getElementById('winTag').textContent=LEVEL===1?'Level concluded (unofficially)':LEVEL===2?'Annex concluded (reluctantly)':LEVEL===3?'Outdoor Indoors inspection complete':'Tuesday concluded at 12:01';
-  document.getElementById('winTitle').textContent=LEVEL===1?'Permit Granted':LEVEL===2?'Annex Cleared':LEVEL===3?'Outside Filed Indoors':'Wednesday Located';
-  document.getElementById('winText').textContent=LEVEL===1?'Retroactively. The End of the Beginning is in a later level. Probably.':LEVEL===2?'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.':LEVEL===3?'The office forest has approved your transfer to Tuesday.':'You crossed a geographic weekday without being late. The parade continues.';
-  document.getElementById('nextBtn').hidden=LEVEL===4;
-  document.getElementById('nextBtn').textContent=LEVEL===1?'Continue to 1-2: The Annex':LEVEL===2?'Continue to 2-1: Outdoor Indoors':'Continue to 3-1: Tuesday';
+  document.getElementById('winTag').textContent=LEVEL===1?'Level concluded (unofficially)':LEVEL===2?'Annex concluded (reluctantly)':LEVEL===3?'Outdoor Indoors inspection complete':LEVEL===4?'Tuesday concluded at 12:01':'Desert size inspection complete';
+  document.getElementById('winTitle').textContent=LEVEL===1?'Permit Granted':LEVEL===2?'Annex Cleared':LEVEL===3?'Outside Filed Indoors':LEVEL===4?'Wednesday Located':'Size Dispute Settled';
+  document.getElementById('winText').textContent=LEVEL===1?'Retroactively. The End of the Beginning is in a later level. Probably.':LEVEL===2?'Four confrontations concluded. The End of the Beginning remains unlocated, but you are closer. Possibly.':LEVEL===3?'The office forest has approved your transfer to Tuesday.':LEVEL===4?'You crossed a geographic weekday without being late. The desert has accepted your transfer.':'Three horizons unfolded. Desert certified large, small, and crossed. The Parade Preparation Annex has received your arrival notice. Nobody has received the parade.';
+  document.getElementById('nextBtn').hidden=LEVEL===5;
+  document.getElementById('nextBtn').textContent=LEVEL===1?'Continue to 1-2: The Annex':LEVEL===2?'Continue to 2-1: Outdoor Indoors':LEVEL===3?'Continue to 3-1: Tuesday':'Continue to 4-1: The Large Small Desert';
   document.getElementById('winScreen').hidden = false;
-  document.getElementById(LEVEL===4?'againBtn':'nextBtn').focus();
+  document.getElementById(LEVEL===5?'againBtn':'nextBtn').focus();
 }
 
 /* ---------------- drawing ---------------- */
@@ -2138,6 +2361,7 @@ function drawTile(L, factor, y, extra){
 const motes = Array.from({length:34}, (_,i)=>({x:Math.random()*W, y:Math.random()*H, s:.6+Math.random()*1.6, v:4+Math.random()*10, p:Math.random()*6}));
 
 function drawBackground(){
+  if(LEVEL === 5){drawDesertBack();return;}
   if(LEVEL === 4){drawTuesdayBack();return;}
   if(LEVEL === 3){drawDepartmentBack();return;}
   if(!LAY.sky) buildScenery();
@@ -2163,6 +2387,7 @@ function drawBackground(){
   drawTile(LAY.near, .6, GY-150);
 }
 function drawOverlay(){
+  if(LEVEL===5){if(LAY.vig)ctx.drawImage(LAY.vig.c,0,0,W,H);return;}
   if(LEVEL===3){ctx.fillStyle='rgba(20,48,38,.08)';ctx.fillRect(0,0,W,H);ctx.drawImage(LAY.vig.c,0,0,W,H);return;}
   drawTile(LAY.fore, 1.35, H-90, 200);
   for(const m of motes){
@@ -2186,6 +2411,14 @@ function shadow(x, y, w){
 
 function drawGround(s){
   if(s.k==='wall' || s.k==='signtop') return;
+  if(s.k==='sand'||s.k==='sandstone'){
+    const gr=ctx.createLinearGradient(0,s.y,0,s.y+s.h);gr.addColorStop(0,'#e8bd79');gr.addColorStop(.3,'#b47b49');gr.addColorStop(1,'#77503a');
+    ctx.fillStyle=gr;ctx.fillRect(s.x,s.y,s.w,s.h);ctx.strokeStyle='#5f4432';ctx.lineWidth=3;ctx.strokeRect(s.x,s.y,s.w,s.h);
+    ctx.fillStyle='#ffe3a2';ctx.fillRect(s.x,s.y,s.w,5);ctx.fillStyle='#bd8c56';
+    for(let y=s.y+14;y<s.y+s.h;y+=17){for(let x=s.x+8+(y%3)*10;x<s.x+s.w-10;x+=37)ctx.fillRect(x,y,17,3);}
+    if(s.k==='sandstone'){ctx.fillStyle='#6f4c37';for(let x=s.x+12;x<s.x+s.w;x+=25)ctx.fillRect(x,s.y+10,3,s.h-12);}
+    return;
+  }
   if(s.k==='office'){
     const floor=ctx.createLinearGradient(0,s.y,0,s.y+s.h);floor.addColorStop(0,'#789087');floor.addColorStop(.16,'#536c64');floor.addColorStop(1,'#263f39');ctx.fillStyle=floor;ctx.fillRect(s.x,s.y,s.w,s.h);
     ctx.fillStyle='#a8bdb4';ctx.fillRect(s.x,s.y,s.w,7);ctx.fillStyle='#314c45';ctx.fillRect(s.x,s.y+12,s.w,5);
@@ -2676,7 +2909,7 @@ function drawExit(){
 
 function drawPrompts(){
   if(state!=='play') return;
-  let hint = environmentHint();
+  let hint = (LEVEL===5?desertHint():null)||environmentHint();
   if(!hint && LEVEL === 2) hint = hint2();
   else if(!gate.open && Math.abs(pcx()-1015) < 220) hint = 'X  Whistle';
   else if(LEVEL === 1 && hasStamp && lift.state==='pending' && pcx() > 2300 && pcx() < 2460) hint = stampMode==='APPROVED' ? 'C  Approve the platform' : 'V  Switch to APPROVED';
@@ -2696,6 +2929,13 @@ function drawHUD(){
   ctx.textAlign='right'; ctx.fillStyle = hasStamp ? (stampMode==='APPROVED' ? '#5cc5b5' : '#f07a62') : '#6f8580'; ctx.fillText(hasStamp ? 'INK: ' + stampMode + '  [V]' : 'NO AUTHORITY', W-90, 27);
   const mm = Math.floor(levelTime/60), ss = String(Math.floor(levelTime%60)).padStart(2,'0');
   ctx.fillStyle = C.paper; ctx.fillText(`${mm}:${ss}`, W-26, 27);
+
+  if(LEVEL===5){
+    const done=desertPanels.filter(p=>p.open).length;
+    ctx.fillStyle='rgba(53,38,29,.92)';rr(10,50,485,48,9);ctx.fill();
+    txt('HORIZONS '+done+' / 3   ·   SOCK STRETCH [S]',24,65,15,C.mustard,FB,'left');
+    txt(done===3?'Reach the small exit →':'Stamp APPROVED at hinges; Stretch at striped handles.',24,85,13,C.paper,FB,'left');
+  }
 
   // abilities chip (level 2)
   if(LEVEL === 2 && (hasStretch || hasPocket)){
@@ -2752,8 +2992,9 @@ function render(){
   solidsCache = solids();
   drawBackground();
   ctx.save(); ctx.translate(-Math.round(camX), 0);
-  if(LEVEL !== 3 && LEVEL !== 4) for(const sg of signs) drawSign(sg);
+  if(LEVEL !== 3 && LEVEL !== 4 && LEVEL !== 5) for(const sg of signs) drawSign(sg);
   if(LEVEL === 1){ drawArena(); drawExit(); } else if(LEVEL === 2) drawLevel2Back();
+  if(LEVEL === 5)drawDesertScenery();
   for(const s of statics) drawGround(s);
   drawEnvironment();
   if(LEVEL === 1){ drawForks(); drawBridge(); drawGate(); drawStamp(); drawLift(); drawBarrier(); }
@@ -2764,9 +3005,10 @@ function render(){
   for(const sp of spoons) drawSpoon(sp);
   drawSpCites();
   for(const c of crabs) drawCrab(c);
-  if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else if(LEVEL===3) drawDepartmentFront(); else drawTuesdayFront();
+  if(LEVEL === 1){ drawBoss(); drawCites(); } else if(LEVEL === 2) drawLevel2Front(); else if(LEVEL===3) drawDepartmentFront(); else if(LEVEL===4)drawTuesdayFront();else drawDesertFront();
   if(LEVEL === 3){for(const sg of signs) drawSign(sg);drawDepartmentLabels();}
   if(LEVEL === 4){for(const sg of signs) drawSign(sg);}
+  if(LEVEL === 5){for(const sg of signs) drawSign(sg);}
   if(P && !P.hidden && state !== 'dead') drawStretch();
   if(P && !P.hidden && state !== 'dead' && !(P.bonk > 0 && Math.floor(time*16)%2)) drawGumbo(pcx(), P.y+P.h, P.face, {land:P.land, ground:P.ground, salute:P.salute, whistle:P.wcd, moving:Math.abs(P.vx)>20});
   for(const r of rings){
@@ -2898,7 +3140,7 @@ function togglePause(){
   if(paused){ resumeGame(); return; }
   if(state !== 'play' && state !== 'dead') return;
   paused = true; clearInput(); pauseScreen.hidden = false;
-  document.getElementById('pauseObjective').textContent=LEVEL===4?'Objective: whistle all three clocks to 12:01, avoid the awakened clouds, then reach Wednesday.':LEVEL===3?'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.':LEVEL===2?'Objective: clear the Annex confrontations and reach the exit.':'Objective: proceed right through the Municipal Breakfast District.';
+  document.getElementById('pauseObjective').textContent=LEVEL===5?'Objective: stamp all three horizon hinges APPROVED, use Sock Stretch at the striped handles to cross the ravines, then reach the small exit on the right. Whistle pauses rolling paperwork and stops the wind.':LEVEL===4?'Objective: whistle all three clocks to 12:01, avoid the awakened clouds, then reach Wednesday.':LEVEL===3?'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.':LEVEL===2?'Objective: clear the Annex confrontations and reach the exit.':'Objective: proceed right through the Municipal Breakfast District.';
   document.getElementById('resumeBtn').focus();
 }
 pauseBtn.addEventListener('click', togglePause);
@@ -2926,7 +3168,7 @@ function frame(now){
   render();
   document.getElementById('talkEgg').hidden = state!=='play'||paused||!nearEgg();
   const form = collect.find(c=>c.t==='eggform');
-  const questText = LEVEL!==1||state==='title' ? '' : eggQuest==='fetch' ? (form&&form.got ? 'Return the form to Mr. Yolk.' : 'Find Mr. Yolk’s form before the gate.') : eggQuest==='music' ? 'Whistle beside Mr. Yolk.' : eggQuest==='helped' ? 'Mr. Yolk opened the gate. Bonus Yawns ahead!' : eggQuest==='quiet' ? 'Mr. Yolk saved your return point.' : nearEgg() ? 'Mr. Yolk needs a hand. Talk or press T.' : '';
+  const questText = LEVEL===5&&state==='play' ? (desertHint()||'Stamp each horizon APPROVED. Stretch at striped handles. Small exit →') : LEVEL!==1||state==='title' ? '' : eggQuest==='fetch' ? (form&&form.got ? 'Return the form to Mr. Yolk.' : 'Find Mr. Yolk’s form before the gate.') : eggQuest==='music' ? 'Whistle beside Mr. Yolk.' : eggQuest==='helped' ? 'Mr. Yolk opened the gate. Bonus Yawns ahead!' : eggQuest==='quiet' ? 'Mr. Yolk saved your return point.' : nearEgg() ? 'Mr. Yolk needs a hand. Talk or press T.' : '';
   const questLabel=document.getElementById('questStatus');if(questLabel.textContent!==questText)questLabel.textContent=questText;
   pauseBtn.hidden = state !== 'play' && state !== 'dead';
   const badge = document.getElementById('stampStatus');
@@ -2941,7 +3183,7 @@ function frame(now){
 
 
 function setLevelHeading(lvl){
-  const data=lvl===4?['BLORT · The Gumphastic Yawn Parade · World 3-1','Tuesday','A weekday treated as a place. Whistle three clocks past lunch, outlast the impatient clouds, and locate Wednesday.']:lvl===3
+  const data=lvl===5?['BLORT · The Gumphastic Yawn Parade · World 4-1','The Large Small Desert','Approve folding cardboard horizons, use Sock Stretch across three ravines, and dodge tumbleweed paperwork on the way to the small exit.']:lvl===4?['BLORT · The Gumphastic Yawn Parade · World 3-1','Tuesday','A weekday treated as a place. Whistle three clocks past lunch, outlast the impatient clouds, and locate Wednesday.']:lvl===3
     ? ['BLORT · The Gumphastic Yawn Parade · World 2-1','The Department of Outdoor Indoors','A forest working inside an office building. Approve the leafy elevators, file the river, and reach Tuesday.']
     : lvl===2
       ? ['BLORT · The Gumphastic Yawn Parade · World 1-2','The Annex of Unnecessary Confrontations','Sock Stretch, the Emergency Pocket, and four confrontations that were not strictly necessary.']
@@ -2949,6 +3191,8 @@ function setLevelHeading(lvl){
   document.getElementById('worldLabel').textContent=data[0];
   document.getElementById('levelHeading').textContent=data[1];
   document.getElementById('levelSub').textContent=data[2];
+  document.getElementById('titleIntro').textContent=lvl===5?'Gumbo has his stamp and Sock Stretch. Stamp APPROVED at each horizon hinge, walk onto its unfolded path, then tap Stretch near the striped handle. Reach the small exit.':'You are General Mustardseed Gumbo, a sentient whistle-shaped sock. Choose a level, then go right.';
+  document.getElementById('titleTag').textContent=lvl===1?'Planned Unit 12 · Recommended Vertical Slice':data[0];
   document.title=data[1]+' · BLORT';
 }
 
@@ -2967,6 +3211,7 @@ function startGame(mode, lvl){
   if(LEVEL === 1) announce('Welcome to the Municipal Breakfast District. Proceed right. Breakfast ends when approved.');
   if(LEVEL === 3) announce('DEPARTMENT OF OUTDOOR INDOORS. APPROVE ELEVATORS. FORBID THE RIVER CABINET. REACH TUESDAY.');
   if(LEVEL === 4) announce('WELCOME TO TUESDAY. WHISTLE THREE CLOCKS TO 12:01. CLOUDS ATTACK ONLY AFTER LUNCH.');
+  if(LEVEL === 5) announce('STAMP HORIZONS APPROVED. STRETCH AT STRIPED HANDLES. REACH THE SMALL EXIT.');
 }
 document.getElementById('startRelaxed').addEventListener('click', () => startGame('relaxed', startLevelChoice));
 document.getElementById('startStandard').addEventListener('click', () => startGame('standard', startLevelChoice));
@@ -2978,12 +3223,16 @@ document.getElementById('levelSelectBtn').addEventListener('click', () => {
   document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
   document.querySelector('[data-level="'+LEVEL+'"]').focus();
 });
-document.getElementById('nextBtn').addEventListener('click',()=>startGame(null,Math.min(4,LEVEL+1)));
+document.getElementById('nextBtn').addEventListener('click',()=>startGame(null,Math.min(5,LEVEL+1)));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
   startLevelChoice = +b.dataset.level; setLevelHeading(startLevelChoice);
   document.querySelectorAll('[data-level]').forEach(o => o.setAttribute('aria-pressed', String(o === b)));
 }));
 syncSetUI();
+if(window.location.hash==='#large-small-desert'){
+  startLevelChoice=5;setLevelHeading(5);
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===5)));
+}
 cv.addEventListener('pointerdown', () => cv.focus());
 
 // attract mode behind title
@@ -2996,3 +3245,4 @@ requestAnimationFrame(frame);
 </script>
 </body>
 </html>
+
