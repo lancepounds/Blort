@@ -3158,7 +3158,7 @@ function closeCharacterCard(){characterDialog.hidden=true;whoGumbo.focus();}
 whoGumbo.addEventListener('click',openCharacter);
 closeCharacter.addEventListener('click',closeCharacterCard);
 characterDialog.addEventListener('keydown',e=>{
-  if(e.code==='Escape'){e.preventDefault();closeCharacterCard();}
+  if(e.code==='Escape'){e.preventDefault();e.stopPropagation();closeCharacterCard();}
   if(e.code==='Tab'){e.preventDefault();closeCharacter.focus();}
 });
 characterDialog.addEventListener('click',e=>{if(e.target===characterDialog)closeCharacterCard();});
