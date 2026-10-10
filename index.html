@@ -44,12 +44,22 @@ canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
 .btn:focus-visible{outline:3px solid var(--signal);outline-offset:3px}
 .stats{display:grid;grid-template-columns:repeat(3,auto);gap:4px 22px;font-variant-numeric:tabular-nums;font-size:clamp(12px,1.7vw,16px);text-align:left}
 .stats b{color:var(--mustard)}
-.touch{display:none;gap:10px;justify-content:space-between;user-select:none;-webkit-user-select:none}
-.touch .grp{display:flex;gap:10px}
-.touch button{font-family:var(--display);font-size:16px;min-width:64px;height:58px;border-radius:14px;border:2px solid var(--line);background:var(--panel);color:var(--ink);touch-action:none}
+.touch{display:none;flex-direction:column;gap:12px;padding:12px;border:2px solid var(--line);border-radius:12px;background:var(--panel);user-select:none;-webkit-user-select:none}
+.touch .grp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0}
+.touch .ability-controls{grid-template-columns:repeat(var(--ability-columns,4),minmax(0,1fr))}
+.touch button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:var(--body);font-size:clamp(15px,2.1vw,18px);font-weight:700;line-height:1.2;min-width:0;min-height:88px;padding:10px 6px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);touch-action:none;cursor:pointer}
+.touch button small{font-size:13px;font-weight:400;opacity:.85}
+.touch .control-icon{font-size:28px;line-height:1}
+.touch button:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
+.touch button:disabled{opacity:.45;cursor:default}
 .touch button.big{background:var(--mustard);color:#2a1d00;border-color:#9b7410}
+.touch button.whistle-action{background:var(--signal);border-color:var(--signal);color:#06201d}
+.touch button[data-k="ink"][data-ink="APPROVED"]{border-color:var(--signal)}
+.touch button[data-k="ink"][data-ink="FORBIDDEN"]{border-color:#f07a62}
 @media (pointer:coarse){.touch{display:flex}}
 .touch.show{display:flex}
+@media(max-width:420px){.touch{padding:4px;gap:8px}.touch .grp{gap:6px}.touch button{padding:8px 2px}}
+@media(max-width:319px){.touch .grp{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .modes{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 .btn.alt{background:var(--panel);color:var(--ink);box-shadow:0 4px 0 #0a1f1d;border:2px solid var(--line)}
 .btn small{display:block;font-family:var(--body);font-size:12px;font-weight:700;opacity:.8}
@@ -73,7 +83,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .rule{font-size:14px;color:var(--muted);margin:12px 0 0;border-top:1px solid var(--line);padding-top:10px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-.playbar{display:flex;justify-content:flex-end}
+.playbar{display:flex;flex-wrap:wrap;justify-content:flex-end}
 .playbar .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
 #pauseScreen{z-index:5;overflow:auto;justify-content:flex-start;padding:24px 16px;background:rgba(15,43,41,.96)}
 #pauseScreen h2{font-size:clamp(28px,5vw,44px)}
@@ -82,34 +92,26 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 #pauseScreen .btn{font-family:var(--body);font-size:16px;min-height:48px;border-radius:8px}
 @media(max-width:600px){#pauseScreen{padding:12px;gap:8px}#pauseScreen .modes{gap:8px}#pauseScreen .btn{padding:8px 14px}}
 
-.stamp-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-right:auto;font-weight:700}
+.stamp-status{display:flex;flex:1 1 240px;min-width:0;flex-wrap:wrap;align-items:center;gap:8px;margin-right:auto;font-weight:700}
 .stamp-status b{padding:6px 12px;border:2px solid #6f8580;border-radius:6px;background:#163a37;color:#f4ead2}
 .stamp-status[data-ink="APPROVED"] b{background:#164c43;border-color:#5cc5b5;color:#d4fff4}
 .stamp-status[data-ink="FORBIDDEN"] b{background:#622c23;border-color:#f07a62;color:#fff0e9}
 .stamp-status span{font-size:14px;color:var(--muted)}
 .playbar{align-items:center;gap:10px}
 
-.tutorial{background:var(--panel);border:2px solid var(--signal);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px}
-.tutorial-copy{flex:1;min-width:0}.tutorial-copy strong{display:block;color:var(--mustard);font-size:18px}
-.tutorial-copy p{margin:4px 0 0;font-size:16px}
-.tutorial button{font-family:var(--body);font-size:14px;min-height:44px;padding:8px 12px;border:2px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer}
-.tutorial button:focus-visible{outline:3px solid var(--mustard);outline-offset:3px}
-@media(max-width:600px){.tutorial{align-items:flex-start;padding:10px;gap:8px}}
-
-/* Keep the current instruction close to the action and readable. */
-.stage:has(.tutorial:not([hidden])){padding-top:132px;aspect-ratio:auto}
-.stage .tutorial{position:absolute;top:0;left:0;right:0;z-index:4;margin:0;border:0;border-bottom:3px solid #5cc5b5;border-radius:0;background:#fbf4e2;color:#201b14;min-height:132px;padding:16px 20px;align-items:center}
-.stage .tutorial-copy strong{font-family:var(--body);font-size:22px;line-height:1.3;color:#153e38}
-.stage .tutorial-copy p{font-size:20px;line-height:1.4;color:#201b14;max-width:65ch}
-.stage .tutorial button{background:#fff;color:#201b14;border-color:#405b56;font-size:16px;min-height:48px;flex-shrink:0}
-.stage:has(.tutorial:not([hidden])) canvas{height:auto;aspect-ratio:16/9}
-.stage:has(.tutorial:not([hidden])) .overlay{top:132px}
-@media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:200px}.stage .tutorial{min-height:200px;padding:12px;align-items:flex-start;gap:8px}.stage .tutorial-copy strong{font-size:20px}.stage .tutorial-copy p{font-size:18px}.stage .tutorial button{max-width:90px}.stage:has(.tutorial:not([hidden])) .overlay{top:200px}}
-
-.stage:has(.tutorial:not([hidden])){padding-top:0;aspect-ratio:auto}
-.stage .tutorial{position:relative;min-height:0;display:flex}
-.stage:has(.tutorial:not([hidden])) .overlay{top:0}
-@media(max-width:600px){.stage:has(.tutorial:not([hidden])){padding-top:0}.stage .tutorial{min-height:0;flex-wrap:wrap}.stage .tutorial-copy{flex-basis:100%}.stage .tutorial button{max-width:none}.stage:has(.tutorial:not([hidden])) .overlay{top:0}}
+.play-guide{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:16px 20px;border:3px solid var(--signal);border-radius:12px;background:#fbf4e2;color:#201b14}
+.guide-copy{min-width:0}
+.guide-label{display:block;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#42625a;margin-bottom:4px}
+.play-guide h2{margin:0;font-family:var(--body);font-size:22px;line-height:1.3;color:#153e38}
+.play-guide p{margin:6px 0 0;font-size:18px;line-height:1.45;max-width:65ch}
+.guide-ink{width:190px;padding:10px 12px;border:2px solid #1d5f57;border-radius:8px;background:#e8f2e9;color:#164c43}
+.guide-ink[data-ink="FORBIDDEN"]{border-color:#a33e2b;background:#fae7df;color:#622c23}
+.guide-ink span{display:block;font-size:13px;font-weight:700}
+.guide-ink strong{display:block;font-size:19px}
+.guide-ink p{font-size:15px;line-height:1.35}
+.play-guide button{font-family:var(--body);font-size:15px;min-height:48px;padding:8px 12px;border:2px solid #405b56;border-radius:8px;background:#fff;color:#201b14;cursor:pointer}
+.play-guide button:focus-visible{outline:3px solid #164c43;outline-offset:3px}
+@media(max-width:600px){.play-guide{grid-template-columns:1fr;padding:12px;gap:10px}.guide-ink{width:100%}.play-guide button{justify-self:start}}
 
 .encounter-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .encounter-tools .btn{font-family:var(--body);font-size:16px;border-radius:8px;min-height:48px}
@@ -141,10 +143,14 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <p class="sub" id="levelSub">Playable vertical slice of the Municipal Breakfast District. The plot is allowed to lie to you. The controls are not.</p>
   </header>
 
-  <div class="encounter-tools"><button class="btn alt" id="talkEgg" type="button" hidden>Talk to Mr. Yolk</button><span id="questStatus" role="status" aria-live="polite"></span></div>
+  <div class="encounter-tools" id="encounterTools" hidden><button class="btn alt" id="talkEgg" type="button" hidden>Talk to Mr. Yolk</button><span id="questStatus" role="status" aria-live="polite"></span></div>
+  <aside class="play-guide" id="playGuide" aria-labelledby="guideTitle" hidden>
+    <div class="guide-copy" role="status" aria-live="polite" aria-atomic="true"><span class="guide-label" id="guideLabel">Next step</span><h2 id="guideTitle"></h2><p id="guideText"></p></div>
+    <div class="guide-ink" id="guideInk" hidden><span>Needed ink</span><strong id="guideInkName"></strong><p id="guideInkHelp"></p></div>
+    <button type="button" id="skipTutorial" hidden>Skip tutorial</button>
+  </aside>
   <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
-  <aside class="tutorial" id="tutorial" aria-label="Getting started" hidden><div class="tutorial-copy" role="status" aria-live="polite" aria-atomic="true"><strong id="tutorialTitle"></strong><p id="tutorialText"></p></div><button type="button" id="skipTutorial">Skip tutorial</button></aside>
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
       <span class="tag" id="titleTag">Planned Unit 12 · Recommended Vertical Slice</span>
@@ -161,6 +167,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       <div class="modes">
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
         <button class="btn alt" id="startStandard">Standard<small>The original challenge</small></button>
+        <button class="btn alt" id="resumeLevelBtn" type="button" hidden>Resume current level</button>
       </div>
       <p style="font-size:13px;color:var(--muted)">You can fine-tune any of this below the game, even mid-level.</p>
     </div>
@@ -186,6 +193,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       <div class="modes">
         <button class="btn" id="resumeBtn" type="button">Resume</button>
         <button class="btn alt" id="restartBtn" type="button">Restart Level</button>
+        <button class="btn alt" id="pauseLevelSelectBtn" type="button">Level Select</button>
         <button class="btn alt" id="pauseSettingsBtn" type="button" aria-expanded="false" aria-controls="pauseSettings">Settings</button>
       </div>
       <div id="pauseSettings" hidden></div>
@@ -203,18 +211,18 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     </div>
   </div>
 
-  <div class="touch" id="touch">
-    <div class="grp">
-      <button data-k="left" aria-label="Move left">&larr;</button>
-      <button data-k="right" aria-label="Move right">&rarr;</button>
+  <div class="touch" id="touch" role="group" aria-label="Touch controls" hidden>
+    <div class="grp movement-controls" role="group" aria-label="Move, jump, and whistle">
+      <button type="button" data-k="left" aria-label="Move left"><span class="control-icon" aria-hidden="true">&larr;</span><span>Left</span></button>
+      <button type="button" data-k="right" aria-label="Move right"><span class="control-icon" aria-hidden="true">&rarr;</span><span>Right</span></button>
+      <button type="button" data-k="jump" class="big">Jump<small>Space</small></button>
+      <button type="button" data-k="whistle" class="whistle-action">Whistle<small>X / J</small></button>
     </div>
-    <div class="grp">
-      <button data-k="stretch">Stretch</button>
-      <button data-k="pocket">Pocket</button>
-      <button data-k="ink">Ink</button>
-      <button data-k="action">Stamp</button>
-      <button data-k="whistle">Whistle</button>
-      <button data-k="jump" class="big">Jump</button>
+    <div class="grp ability-controls" id="abilityControls" role="group" aria-label="Unlocked abilities">
+      <button type="button" data-k="action">Stamp<small>C / K</small></button>
+      <button type="button" data-k="ink">Switch ink<small>V / L</small></button>
+      <button type="button" data-k="stretch">Stretch<small>S / I</small></button>
+      <button type="button" data-k="pocket">Pocket<small>E / U</small></button>
     </div>
   </div>
 
@@ -349,6 +357,7 @@ function syncSetUI(){
   document.getElementById('presetStandard').setAttribute('aria-pressed', String(isS));
   document.getElementById('touch').classList.toggle('show', !!SET.buttons);
   if(!SET.walk) autoDir = 0;
+  syncTouchControls();
 }
 function applyPreset(name){ const b = SET.buttons; SET = Object.assign({}, PRESETS[name], {buttons:b}); saveSet(); }
 document.querySelectorAll('[data-set]').forEach(b => b.addEventListener('click', () => { SET[b.dataset.set] = !SET[b.dataset.set]; saveSet(); }));
@@ -388,7 +397,7 @@ window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if(k) release(
 window.addEventListener('blur', () => { for(const k in keys) keys[k] = false; });
 document.querySelectorAll('#touch button').forEach(b => {
   const k = b.dataset.k;
-  b.addEventListener('pointerdown', e => { e.preventDefault(); audio(); press(k); try{ b.setPointerCapture(e.pointerId); }catch(_){} });
+  b.addEventListener('pointerdown', e => { if(b.disabled||state!=='play'||paused||!eggDialog.hidden)return; e.preventDefault(); audio(); press(k); try{ b.setPointerCapture(e.pointerId); }catch(_){} });
   ['pointerup','pointercancel','lostpointercapture'].forEach(ev => b.addEventListener(ev, () => release(k)));
 });
 
@@ -3040,19 +3049,14 @@ function render(){
 
 
 let tutorialStep = -1, tutorialDoneTime = 0;
-const tutorialBox = document.getElementById('tutorial');
+const tutorialBox = document.getElementById('playGuide');
 const tutorialSteps = [
   ['1 of 3: Move right','Use Right Arrow or D, or the on-screen right button.'],
   ['2 of 3: Jump','Press Space, W, Z, or Up, or tap Jump. Try reaching a ledge.'],
   ['3 of 3: Whistle','Press X or J, or tap Whistle. Whistle near the gate with the whistle plaque to open it.']
 ];
 function showTutorialStep(){
-  tutorialBox.hidden = tutorialStep < 0;
-  if(tutorialStep < 0) return;
-  const step = tutorialStep < 3 ? tutorialSteps[tutorialStep] : ['You are officially unofficial','Keep going right. Whistle near signs, eggs, and the gate for a response.'];
-  document.getElementById('tutorialTitle').textContent = step[0];
-  document.getElementById('tutorialText').textContent = step[1] + (tutorialStep === 0 && SET.walk ? ' Tap once to walk; tap again to stop.' : '');
-  document.getElementById('skipTutorial').textContent = tutorialStep === 3 ? 'Dismiss' : 'Skip tutorial';
+  syncPlayGuide();
 }
 function beginTutorial(){tutorialStep = LEVEL === 1 ? 0 : -1; tutorialDoneTime = 0; showTutorialStep();}
 function tutorialAction(k){
@@ -3062,6 +3066,88 @@ function tutorialAction(k){
 }
 function endTutorial(){tutorialStep = -1; tutorialDoneTime = 0; showTutorialStep();}
 document.getElementById('skipTutorial').addEventListener('click', () => {endTutorial(); cv.focus();});
+
+/* Plain instructions stay above the canvas and follow actual puzzle state. */
+function playStep(title,text,ink=null){return {title,text,ink};}
+function currentPlayStep(){
+  if(state==='dead')return playStep('Returning to your checkpoint','Your parade license is being reissued. You will return automatically.');
+  if(LEVEL===1&&tutorialStep>=0&&tutorialStep<3){
+    const s=tutorialSteps[tutorialStep];
+    return playStep(s[0],s[1]+(tutorialStep===0?(SET.walk?' Tap once to walk; tap again to stop.':' Hold to walk; release to stop.') : ''));
+  }
+  if(edgeStopped&&(LEVEL===4||(LEVEL===1&&pcx()<2200)))return playStep('Jump across the gap','Tap Jump (Space) to hop across. In tap-to-walk mode, walking resumes in the direction you are facing.');
+  if(LEVEL===1){
+    if(!gate.open)return playStep('Open the whistle gate','Go right to the gate with the whistle plaque. Tap Whistle (X / J) nearby to open it.');
+    if(!hasStamp)return playStep('Find the Official Stamp','Continue right, jumping across the gaps. Pick up the red stamp after the Apology Crabs.');
+    if(!bridge.toasted)return playStep('Approve the toast bridge','Go to the unapproved bridge on the right. Tap Stamp (C / K) with APPROVED ink to make it solid.','APPROVED');
+    if(!barrier.down)return playStep('Forbid the barrier','Move beside the tall barrier on the right. Tap Stamp (C / K) with FORBIDDEN ink to remove it.','FORBIDDEN');
+    if(boss.state==='fight')return playStep('Return Deputy Spoon Prime’s paperwork','Wait for his citations, then tap Whistle (X / J) beside either filing cabinet to return them. Repeat three times.');
+    if(boss.state==='intro'||boss.state==='idle')return playStep('Reach Deputy Spoon Prime','Continue right into the arena. Whistling beside a filing cabinet returns his paperwork.');
+    return playStep('Use the small exit','Go past the giant ceremonial door. Enter the small side door at the far right.');
+  }
+  if(LEVEL===2){
+    if(!hasStretch)return playStep('Pick up Sock Stretch','Move right to the sock badge. Picking it up reveals the Stretch button.');
+    if(pcx()<960)return playStep('Stretch across the first pit','Jump toward the striped handle above the pit, then tap Stretch (S / I) to reach the far side.');
+    const a=activeArena();
+    if(a){
+      const i=arenas.indexOf(a),b=a.b;
+      if(a.state==='intro')return playStep('Get ready: '+b.name,'The confrontation is about to begin. Your next action will appear here.');
+      if(i===0)return playStep('Tug Baron von Lint’s tag','Move beneath his hanging laundry tag, face it, and tap Stretch (S / I). Tug it three times.');
+      if(i===1)return pocketItem==='duck'?playStep('Throw the duck at Chairman Waffle','Face the Chairman and tap Pocket (E / U). Collect another duck from a kiosk after each throw.'):playStep('Get a duck for Chairman Waffle','Walk into a duck kiosk to fill your Emergency Pocket, then tap Pocket (E / U) to throw it at the Chairman.');
+      if(i===2)return playStep('Forbid General Crumb',b.st==='salute'?'Move close and tap Stamp (C / K) with FORBIDDEN ink while he holds his salute.':'Tap Whistle (X / J) to make him salute, then move close and stamp him FORBIDDEN.','FORBIDDEN');
+      if(!b.box.tug)return playStep('Tug the form’s corner tag','Move below the red corner tag, face it, and tap Stretch (S / I).');
+      if(!b.box.duck)return playStep('Throw a duck at the form',pocketItem==='duck'?'Face the form and tap Pocket (E / U) to throw your duck.':'Walk into the duck kiosk to collect a duck, then use Pocket (E / U) to throw it at the form.');
+      if(!b.box.stamp)return playStep('Approve Form 1040-Ω','Whistle (X / J) to bring the form down, then move close and tap Stamp (C / K) with APPROVED ink.','APPROVED');
+    }
+    if(arenas[0].state==='done'&&!hasPocket)return playStep('Pick up the Emergency Pocket','Continue right to the pocket badge. Picking it up reveals the Pocket button.');
+    if(hasPocket&&annexDoor&&!annexDoor.open)return pocketItem==='key'?playStep('Unlock the Annex door','Go beside the locked door and tap Pocket (E / U) to use the Municipal Key.'):playStep('Collect the Municipal Key','Walk into the key kiosk before the locked door. The key goes into your Emergency Pocket.');
+    const next=arenas.find(q=>q.state!=='done');
+    return next?playStep('Reach '+next.b.name,'Continue right into the next arena. Its instructions will appear when the confrontation begins.'):playStep('Reach the Annex exit','All four confrontations are complete. Continue right to the exit.');
+  }
+  if(LEVEL===3){
+    if(deptElevators[0].mark!=='APPROVED')return playStep('Approve the first leafy elevator','Move beside the first leafy platform and tap Stamp (C / K) with APPROVED ink.','APPROVED');
+    if(pcx()<1020)return playStep('Ride the leafy elevator','Step onto the approved leafy platform. As it rises, jump to the ledge on the right.');
+    if(deptCabinet.mark!=='FORBIDDEN')return playStep('File the river','Go beside the river’s filing cabinet and tap Stamp (C / K) with FORBIDDEN ink to create a crossing.','FORBIDDEN');
+    if(pcx()<2180)return playStep('Cross the filed river','Walk right across the new crossing. Whistle (X / J) can interrupt nearby office enemies.');
+    if(deptElevators[1].mark!=='APPROVED')return playStep('Approve the canopy elevator','Continue to the second leafy platform and stamp it APPROVED. Whistle (X / J) silences nearby Loud Rectangles.','APPROVED');
+    if(pcx()<3420)return playStep('Ride the canopy elevator','Step onto the approved platform, then jump to the right side as it rises.');
+    if(deptBoss.state==='quiet')return playStep('Whistle during Quiet Hours','Move near the Executive Loud Rectangle and tap Whistle (X / J). '+deptBoss.hp+' successful whistles remain.');
+    if(deptBoss.state==='loud')return playStep('Jump over the sound waves','Tap Jump (Space) to clear the waves. Save your whistle for Quiet Hours, when the Executive Rectangle stops shouting.');
+    if(deptBoss.state!=='defeated')return playStep('Reach the final audit','Continue right. Jump over the Executive Rectangle’s sound waves, then whistle beside it during Quiet Hours.');
+    return playStep('Reach Tuesday','The audit is complete. Continue right and enter the Tuesday exit.');
+  }
+  if(LEVEL===4){
+    const i=tuesdayClocks.findIndex(c=>!c.after);
+    return i>=0?playStep('Whistle clock '+(i+1)+' of 3','Go to the next clock and tap Whistle (X / J) to set it to 12:01. Clouds drop paperwork after lunch; keep moving and jump across gaps.'):playStep('Reach Wednesday','All three clocks are after lunch. Continue right to the Wednesday door.');
+  }
+  if(LEVEL===5){
+    const f=tumbleForms.find(q=>!q.frozen&&q.stun<=0&&Math.abs(q.x-pcx())<220&&(q.state==='warn'||q.state==='roll'));
+    if(f)return playStep('Pause the rolling paperwork','Tap Whistle (X / J) nearby to put the tumbleweed paperwork on hold, then pass it.');
+    const i=desertPanels.findIndex(p=>pcx()<p.end);
+    const p=i>=0?desertPanels[i]:desertPanels.find(q=>!q.open);
+    if(p&&!p.open)return playStep('Approve horizon '+(desertPanels.indexOf(p)+1)+' of 3','Move beside the numbered hinge and tap Stamp (C / K) with APPROVED ink to unfold the approach.','APPROVED');
+    if(p)return playStep('Stretch across ravine '+(i+1),'Walk onto the unfolded path. Near the striped handle, tap Stretch (S / I) to cross to the far side.');
+    return playStep('Reach the small exit','All three horizons are approved. Continue right to the small green door. Whistle (X / J) pauses rolling paperwork and stops the fans.');
+  }
+  return playStep('Continue right','Follow the path to the next checkpoint.');
+}
+function syncPlayGuide(){
+  tutorialBox.hidden=state!=='play'&&state!=='dead';
+  if(tutorialBox.hidden)return;
+  const s=currentPlayStep();
+  for(const [id,value] of [['guideTitle',s.title],['guideText',s.text],['guideLabel',(tutorialStep>=0?'Getting started':'Next step')+(paused?' · Paused':'')]]){
+    const e=document.getElementById(id);if(e.textContent!==value)e.textContent=value;
+  }
+  const ink=document.getElementById('guideInk');ink.hidden=!s.ink;
+  if(s.ink){
+    ink.dataset.ink=s.ink;
+    const name=document.getElementById('guideInkName');if(name.textContent!==s.ink)name.textContent=s.ink;
+    const help=stampMode===s.ink?'Ready. Follow the next step.':'Tap Switch ink (V / L) first.';
+    const e=document.getElementById('guideInkHelp');if(e.textContent!==help)e.textContent=help;
+  }
+  const skip=document.getElementById('skipTutorial');skip.hidden=tutorialStep<0;
+  skip.textContent=tutorialStep===3?'Dismiss tutorial':'Skip tutorial';
+}
 
 
 const characterDialog=document.getElementById('characterDialog');
@@ -3119,9 +3205,31 @@ function updateEggQuest(){
 }
 
 /* ---------------- loop ---------------- */
-let paused = false;
+let paused = false, suspendedState = null;
 const pauseScreen = document.getElementById('pauseScreen');
 const pauseBtn = document.getElementById('pauseBtn');
+const touchPanel = document.getElementById('touch');
+const touchButtons = [...document.querySelectorAll('#touch button')];
+function syncTouchControls(){
+  touchPanel.hidden=state!=='play'&&state!=='dead';
+  const enabled=state==='play'&&!paused&&eggDialog.hidden&&characterDialog.hidden;
+  let abilities=0;
+  for(const b of touchButtons){
+    const k=b.dataset.k;
+    const available=k==='action'||k==='ink'?hasStamp:k==='stretch'?hasStretch:k==='pocket'?hasPocket:true;
+    b.hidden=!available;b.disabled=!available||!enabled;
+    if(available&&['action','ink','stretch','pocket'].includes(k))abilities++;
+    if(k==='ink'){
+      b.dataset.ink=hasStamp?stampMode:'';
+      const label='Switch ink. Current ink: '+stampMode;
+      if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label);
+    }
+  }
+  const row=document.getElementById('abilityControls');row.hidden=abilities===0;
+  if(row.dataset.columns!==String(abilities)){
+    row.dataset.columns=String(abilities);row.style.setProperty('--ability-columns',String(Math.max(1,abilities)));
+  }
+}
 const settingsPanel = document.querySelector('.settings');
 const settingsHome = document.createElement('div');
 settingsPanel.before(settingsHome);
@@ -3132,19 +3240,47 @@ function restoreSettings(){
   document.getElementById('pauseSettingsBtn').setAttribute('aria-expanded','false');
 }
 function resumeGame(){
+  if(state==='title'&&suspendedState){resumeSuspendedLevel();return;}
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   last = performance.now(); cv.focus();
+  syncPlayGuide();syncTouchControls();
 }
 function togglePause(){
   if(!eggDialog.hidden) return;
-  if(paused){ resumeGame(); return; }
+  if(state==='title'&&suspendedState){resumeSuspendedLevel();return;}
   if(state !== 'play' && state !== 'dead') return;
+  if(paused){ resumeGame(); return; }
   paused = true; clearInput(); pauseScreen.hidden = false;
   document.getElementById('pauseObjective').textContent=LEVEL===5?'Objective: stamp all three horizon hinges APPROVED, use Sock Stretch at the striped handles to cross the ravines, then reach the small exit on the right. Whistle pauses rolling paperwork and stops the wind.':LEVEL===4?'Objective: whistle all three clocks to 12:01, avoid the awakened clouds, then reach Wednesday.':LEVEL===3?'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.':LEVEL===2?'Objective: clear the Annex confrontations and reach the exit.':'Objective: proceed right through the Municipal Breakfast District.';
   document.getElementById('resumeBtn').focus();
+  syncPlayGuide();syncTouchControls();
+}
+function returnToLevelSelect(){
+  suspendedState=paused&&(state==='play'||state==='dead')?state:null;
+  paused=!!suspendedState;clearInput();restoreSettings();
+  if(!suspendedState)endTutorial();
+  state='title';pauseScreen.hidden=true;eggDialog.hidden=true;
+  document.getElementById('winScreen').hidden=true;
+  document.getElementById('titleScreen').hidden=false;
+  startLevelChoice=LEVEL;setLevelHeading(LEVEL);
+  const resume=document.getElementById('resumeLevelBtn');resume.hidden=!suspendedState;
+  resume.textContent='Resume '+document.getElementById('levelHeading').textContent;
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
+  syncPlayGuide();syncTouchControls();
+  document.querySelector('[data-level="'+LEVEL+'"]').focus();
+}
+function resumeSuspendedLevel(){
+  if(!suspendedState)return;
+  state=suspendedState;suspendedState=null;startLevelChoice=LEVEL;setLevelHeading(LEVEL);
+  document.getElementById('titleScreen').hidden=true;
+  document.getElementById('resumeLevelBtn').hidden=true;
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
+  resumeGame();
 }
 pauseBtn.addEventListener('click', togglePause);
 document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+document.getElementById('pauseLevelSelectBtn').addEventListener('click', returnToLevelSelect);
+document.getElementById('resumeLevelBtn').addEventListener('click', resumeSuspendedLevel);
 document.getElementById('restartBtn').addEventListener('click', () => startGame(null, LEVEL));
 document.getElementById('pauseSettingsBtn').addEventListener('click', () => {
   const box = document.getElementById('pauseSettings');
@@ -3166,10 +3302,12 @@ function frame(now){
   const dt = Math.min(1/30, (now-last)/1000); last = now;
   if(!paused) update(dt * (state==='play' || state==='dead' ? SET.speed : 1));
   render();
+  syncPlayGuide();syncTouchControls();
   document.getElementById('talkEgg').hidden = state!=='play'||paused||!nearEgg();
   const form = collect.find(c=>c.t==='eggform');
-  const questText = LEVEL===5&&state==='play' ? (desertHint()||'Stamp each horizon APPROVED. Stretch at striped handles. Small exit →') : LEVEL!==1||state==='title' ? '' : eggQuest==='fetch' ? (form&&form.got ? 'Return the form to Mr. Yolk.' : 'Find Mr. Yolk’s form before the gate.') : eggQuest==='music' ? 'Whistle beside Mr. Yolk.' : eggQuest==='helped' ? 'Mr. Yolk opened the gate. Bonus Yawns ahead!' : eggQuest==='quiet' ? 'Mr. Yolk saved your return point.' : nearEgg() ? 'Mr. Yolk needs a hand. Talk or press T.' : '';
+  const questText = LEVEL!==1||state!=='play' ? '' : eggQuest==='fetch' ? (form&&form.got ? 'Return the form to Mr. Yolk.' : 'Find Mr. Yolk’s form before the gate.') : eggQuest==='music' ? 'Whistle beside Mr. Yolk.' : eggQuest==='helped' ? 'Mr. Yolk opened the gate. Bonus Yawns ahead!' : eggQuest==='quiet' ? 'Mr. Yolk saved your return point.' : nearEgg() ? 'Mr. Yolk needs a hand. Talk or press T.' : '';
   const questLabel=document.getElementById('questStatus');if(questLabel.textContent!==questText)questLabel.textContent=questText;
+  document.getElementById('encounterTools').hidden=!questText&&document.getElementById('talkEgg').hidden;
   pauseBtn.hidden = state !== 'play' && state !== 'dead';
   const badge = document.getElementById('stampStatus');
   badge.hidden = state === 'title';
@@ -3197,6 +3335,7 @@ function setLevelHeading(lvl){
 }
 
 function startGame(mode, lvl){
+  suspendedState=null;document.getElementById('resumeLevelBtn').hidden=true;
   eggQuest='new';eggDialog.hidden=true;
   stampFlashes = [];
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
@@ -3207,6 +3346,7 @@ function startGame(mode, lvl){
   reset(true); state = 'play'; beginTutorial();
   document.getElementById('titleScreen').hidden = true;
   document.getElementById('winScreen').hidden = true;
+  syncTouchControls();
   cv.focus();
   if(LEVEL === 1) announce('Welcome to the Municipal Breakfast District. Proceed right. Breakfast ends when approved.');
   if(LEVEL === 3) announce('DEPARTMENT OF OUTDOOR INDOORS. APPROVE ELEVATORS. FORBID THE RIVER CABINET. REACH TUESDAY.');
@@ -3216,13 +3356,7 @@ function startGame(mode, lvl){
 document.getElementById('startRelaxed').addEventListener('click', () => startGame('relaxed', startLevelChoice));
 document.getElementById('startStandard').addEventListener('click', () => startGame('standard', startLevelChoice));
 document.getElementById('againBtn').addEventListener('click', () => startGame(null, LEVEL));
-document.getElementById('levelSelectBtn').addEventListener('click', () => {
-  state='title';paused=false;clearInput();document.getElementById('winScreen').hidden=true;
-  document.getElementById('pauseScreen').hidden=true;document.getElementById('titleScreen').hidden=false;
-  startLevelChoice=LEVEL;setLevelHeading(LEVEL);
-  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
-  document.querySelector('[data-level="'+LEVEL+'"]').focus();
-});
+document.getElementById('levelSelectBtn').addEventListener('click', returnToLevelSelect);
 document.getElementById('nextBtn').addEventListener('click',()=>startGame(null,Math.min(5,LEVEL+1)));
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => {
   startLevelChoice = +b.dataset.level; setLevelHeading(startLevelChoice);

@@ -24,7 +24,9 @@ Jump to the new level's selection: **https://lancepounds.github.io/Blort/#large-
 | **3-1 Tuesday** | Treat a weekday as a place. Whistle three clocks past lunch, evade the newly impatient clouds, and locate Wednesday. |
 | **4-1 The Large Small Desert** | Giant cardboard mesas, three folding horizons, increasingly wide ravines, and tumbleweed paperwork. Stamp each hinge APPROVED, walk onto the unfolded approach, then use Sock Stretch at its striped handle. Whistle stops the fans and pauses the rolling forms; FORBIDDEN ink parks the forms. Reach the small exit after all three approvals. |
 
-Every completion screen offers **Play This Level Again** and **Return to Level Select**. Tuesday now continues into the desert. The desert starts with the Official Stamp and Sock Stretch, so it can also be played directly from level select. Checkpoints follow each ravine, and horizon approvals persist after falls.
+Every completion screen offers **Play This Level Again** and **Return to Level Select**. You can also open **Level Select** from the pause menu at any point. Browsing keeps the current run paused, with a **Resume** button to return to it; starting a level begins a fresh run. Tuesday now continues into the desert. The desert starts with the Official Stamp and Sock Stretch, so it can also be played directly from level select. Checkpoints follow each ravine, and horizon approvals persist after falls.
+
+A readable **Next step** panel above the game follows each level's puzzles and confrontations. Stamp puzzles show the ink they need and tell you when to switch ink. The opening tutorial uses this panel too.
 
 ## Controls
 
@@ -39,7 +41,7 @@ Every completion screen offers **Play This Level Again** and **Return to Level S
 | Use Emergency Pocket | E or U |
 | Sound on / off | M |
 
-On phones and tablets, large on-screen buttons appear under the game. They can also be turned on for desktop in Play settings.
+On phones and tablets, large on-screen buttons appear under the game in two rows: movement, Jump, and Whistle above the unlocked abilities. Stamp, Switch ink, Stretch, and Pocket appear as you collect their abilities. Buttons are disabled while paused. They can also be turned on for desktop in Play settings.
 
 ## Accessibility: Relaxed mode
 
