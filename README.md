@@ -30,6 +30,8 @@ A readable **Next step** panel above the game follows each level's puzzles and c
 
 Progress **autosaves in the same browser**. Choose **Continue** on the main screen after closing or refreshing the page to return to your last checkpoint with collected items, unlocked abilities, puzzle approvals, and completed bosses intact. Completed levels retain their results screen. Starting a fresh level replaces the saved run.
 
+Level Select shows a **completion checkmark** and your **best Yawn and Form totals** on every level, plus an overall completed-level count. Each total keeps its highest count from any run, in Relaxed or Standard mode. These records survive replays, level restarts, and starting another level. Permit to Toast's Yawn total includes Mr. Yolk's three bonus Yawns; his fetched quest item is separate from collectible Forms. Existing checkpoint saves seed the new records automatically. When browser storage is unavailable, records remain visible for the current visit.
+
 The pause menu also offers **Restart from checkpoint**. It returns you to your latest station, clears active attacks and held controls, and keeps level progress. Unfinished confrontations restart; completed bosses stay cleared. **Restart Level** still starts the whole level over. Saving uses browser storage; checkpoint recovery works even when storage is unavailable.
 
 ## Controls

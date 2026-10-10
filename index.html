@@ -134,6 +134,12 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 #titleScreen h2{font-size:clamp(32px,5vw,48px)}
 #titleScreen .modes[aria-label="Choose a level"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:min(880px,100%);gap:8px}
 #titleScreen .tog{padding:8px 12px}
+#titleScreen .level-result{margin-top:7px;padding-top:6px;border-top:1px solid currentColor;font-size:14px;font-weight:700}
+#titleScreen .tog[data-completed="true"] .level-result{color:var(--signal)}
+#titleScreen .tog[aria-pressed="true"] .level-result{color:#06201d}
+#titleScreen .level-best{font-size:14px;line-height:1.4;font-variant-numeric:tabular-nums}
+#titleScreen .level-record-hint{margin-top:3px;font-size:12px}
+#levelProgress{font-family:var(--body);font-size:14px;color:var(--muted)}
 @media(max-width:600px){#titleScreen .modes[aria-label="Choose a level"]{grid-template-columns:1fr 1fr}#titleScreen{padding:12px}}
 </style>
 </head>
@@ -160,12 +166,13 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
       <p id="titleIntro">You are General Mustardseed Gumbo, a sentient whistle-shaped sock. Breakfast ends when approved. Go right.</p>
       <button class="btn alt" id="whoGumbo" type="button" aria-haspopup="dialog">Who is General Mustardseed Gumbo?</button>
       <div class="modes" role="group" aria-label="Choose a level">
-        <button class="tog" data-level="1" aria-pressed="true">1-1 Permit to Toast<span>Whistle gates, stamp puzzles, Apology Crabs, and Deputy Spoon Prime</span></button>
-        <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span></button>
-        <button class="tog" data-level="3" aria-pressed="false">2-1 Outdoor Indoors<span>Office forest, leafy elevators, filing-cabinet river</span></button>
-        <button class="tog" data-level="4" aria-pressed="false">3-1 Tuesday<span>Set three clocks after lunch, survive the impatient clouds, reach Wednesday</span></button>
-        <button class="tog" data-level="5" aria-pressed="false">4-1 The Large Small Desert<span>Unfold cardboard horizons, stretch across ravines, dodge tumbleweed paperwork</span></button>
+        <button class="tog" data-level="1" aria-pressed="true">1-1 Permit to Toast<span>Whistle gates, stamp puzzles, Apology Crabs, and Deputy Spoon Prime</span><span class="level-result" id="levelResult1">Not completed</span><span class="level-best" id="levelBest1">Best: Yawns 0/27 · Forms 0/3</span><span class="level-record-hint">Includes Mr. Yolk’s 3 bonus Yawns</span></button>
+        <button class="tog" data-level="2" aria-pressed="false">1-2 The Annex<span>4 mini-bosses, Sock Stretch, Emergency Pocket</span><span class="level-result" id="levelResult2">Not completed</span><span class="level-best" id="levelBest2">Best: Yawns 0/15 · Forms 0/2</span></button>
+        <button class="tog" data-level="3" aria-pressed="false">2-1 Outdoor Indoors<span>Office forest, leafy elevators, filing-cabinet river</span><span class="level-result" id="levelResult3">Not completed</span><span class="level-best" id="levelBest3">Best: Yawns 0/5 · Forms 0/2</span></button>
+        <button class="tog" data-level="4" aria-pressed="false">3-1 Tuesday<span>Set three clocks after lunch, survive the impatient clouds, reach Wednesday</span><span class="level-result" id="levelResult4">Not completed</span><span class="level-best" id="levelBest4">Best: Yawns 0/11 · Forms 0/1</span></button>
+        <button class="tog" data-level="5" aria-pressed="false">4-1 The Large Small Desert<span>Unfold cardboard horizons, stretch across ravines, dodge tumbleweed paperwork</span><span class="level-result" id="levelResult5">Not completed</span><span class="level-best" id="levelBest5">Best: Yawns 0/16 · Forms 0/2</span></button>
       </div>
+      <p id="levelProgress" role="status" aria-live="polite"></p>
       <div class="modes">
         <button class="btn" id="continueBtn" type="button" hidden>Continue saved game</button>
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
@@ -3218,6 +3225,72 @@ let paused = false, suspendedState = null;
 const PROGRESS_KEY='blort-progress-v1';
 const LEVEL_CODES=['','1-1','1-2','2-1','3-1','4-1'];
 const LEVEL_NAMES=['','Permit to Toast','The Annex','Outdoor Indoors','Tuesday','The Large Small Desert'];
+const RECORDS_KEY='blort-records-v1';
+// Collectible order also lets existing checkpoint saves seed the new records.
+// "e" is Mr. Yolk's quest item; it is not a collectible Form.
+const LEVEL_COLLECTIBLE_TYPES=['','y'.repeat(21)+'fffyyybn','y'.repeat(15)+'ffbn','yyyfyybfn','y'.repeat(11)+'fbn','y'.repeat(16)+'ffbn'];
+const LEVEL_TOTALS=LEVEL_COLLECTIBLE_TYPES.map((types,level)=>({
+  yawns:[...types].filter(t=>t==='y').length+(level===1?3:0),
+  forms:[...types].filter(t=>t==='f').length
+}));
+let recordsAvailable=true;
+function readLevelRecords(){
+  let raw;
+  try{raw=localStorage.getItem(RECORDS_KEY);}catch(e){recordsAvailable=false;return {};}
+  if(!raw||raw.length>8192)return {};
+  try{
+    const data=JSON.parse(raw),records={};
+    if(!data||data.version!==1||!data.levels||typeof data.levels!=='object'||Array.isArray(data.levels))return {};
+    for(let level=1;level<LEVEL_TOTALS.length;level++){
+      const r=data.levels[level],total=LEVEL_TOTALS[level];
+      if(r&&typeof r.completed==='boolean'&&Number.isInteger(r.yawns)&&r.yawns>=0&&r.yawns<=total.yawns&&Number.isInteger(r.forms)&&r.forms>=0&&r.forms<=total.forms){
+        records[level]={completed:r.completed,yawns:r.yawns,forms:r.forms};
+      }
+    }
+    return records;
+  }catch(e){return {};}
+}
+let levelRecords=readLevelRecords();
+function mergeLevelRecords(a,b){
+  const merged={};
+  for(let level=1;level<LEVEL_TOTALS.length;level++){
+    if(!a[level]&&!b[level])continue;
+    const x=a[level]||{},y=b[level]||{};
+    merged[level]={completed:!!(x.completed||y.completed),yawns:Math.max(x.yawns||0,y.yawns||0),forms:Math.max(x.forms||0,y.forms||0)};
+  }
+  return merged;
+}
+function syncLevelRecordsUI(){
+  let completed=0;
+  document.querySelectorAll('[data-level]').forEach(button=>{
+    const level=+button.dataset.level,r=levelRecords[level]||{completed:false,yawns:0,forms:0},total=LEVEL_TOTALS[level];
+    if(r.completed)completed++;
+    button.dataset.completed=String(r.completed);
+    const result=document.getElementById('levelResult'+level),best=document.getElementById('levelBest'+level);
+    const status=r.completed?'✓ Completed':'Not completed',counts='Best: Yawns '+r.yawns+'/'+total.yawns+' · Forms '+r.forms+'/'+total.forms;
+    if(result.textContent!==status)result.textContent=status;
+    if(best.textContent!==counts)best.textContent=counts;
+  });
+  const note=document.getElementById('levelProgress');
+  const text='Levels completed: '+completed+'/'+(LEVEL_TOTALS.length-1)+' · '+(recordsAvailable?'Best totals saved in this browser.':'Best totals kept for this visit; browser saving unavailable.');
+  if(note.textContent!==text)note.textContent=text;
+}
+function rememberLevelProgress(level,record){
+  const before=JSON.stringify(levelRecords);
+  // Merge before writing so another tab's records are retained too.
+  levelRecords=mergeLevelRecords(mergeLevelRecords(levelRecords,readLevelRecords()),{[level]:record});
+  if(before!==JSON.stringify(levelRecords)||!recordsAvailable){
+    try{localStorage.setItem(RECORDS_KEY,JSON.stringify({version:1,levels:levelRecords}));recordsAvailable=true;}
+    catch(e){recordsAvailable=false;}
+  }
+  syncLevelRecordsUI();
+}
+function rememberSavedRecord(d){
+  let types=LEVEL_COLLECTIBLE_TYPES[d.level];
+  if(d.level===1)types+=d.quest==='helped'?'eyyy':d.quest==='fetch'?'e':'';
+  const count=type=>[...types].filter((t,n)=>t===type&&d.collected[n]).length;
+  rememberLevelProgress(d.level,{completed:d.completed,yawns:count('y'),forms:count('f')});
+}
 const RETURN_POINTS={1:[130,1050,2108,3608,4648],2:[80,998,2098,3068,4128,5268],3:[80,1088,2238,3488],4:[80,1368,2748,4128],5:[80,1498,3168,4998,5818]};
 let saveAvailable=true, saveProbe=0, saveAge=0, lastSaveSignature='';
 function validProgress(d){
@@ -3292,6 +3365,7 @@ function autosaveProgress(dt=0,force=false){
   const data=progressSnapshot(),signature=JSON.stringify({...data,elapsed:0});
   if(!force&&signature===lastSaveSignature&&saveAge<5)return;
   lastSaveSignature=signature;saveAge=0;
+  rememberLevelProgress(LEVEL,{completed:data.completed,yawns:collect.filter(c=>c.t==='yawn'&&c.got).length,forms:collect.filter(c=>c.t==='form'&&c.got).length});
   try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(data));savedProgress=data;saveAvailable=true;}
   catch(e){saveAvailable=false;}
   syncProgressUI();
@@ -3456,6 +3530,10 @@ pauseScreen.addEventListener('keydown', e => {
 window.addEventListener('blur', () => { if(!paused && (state === 'play' || state === 'dead')) togglePause(); });
 document.addEventListener('visibilitychange', () => { if(document.hidden && !paused && (state === 'play' || state === 'dead')) togglePause(); });
 window.addEventListener('pagehide',()=>autosaveProgress(0,true));
+window.addEventListener('storage',e=>{
+  if(e.key!==RECORDS_KEY)return;
+  levelRecords=mergeLevelRecords(levelRecords,readLevelRecords());syncLevelRecordsUI();
+});
 let last = performance.now();
 function frame(now){
   const dt = Math.min(1/30, (now-last)/1000); last = now;
@@ -3536,6 +3614,8 @@ cv.addEventListener('pointerdown', () => cv.focus());
 // attract mode behind title
 time = 0; popups = []; reset(true); state = 'title';
 P.x = 300; P.y = GY-40; P.vy = 0; P.vx = 0; camX = 0;
+if(savedProgress)rememberSavedRecord(savedProgress);
+syncLevelRecordsUI();
 syncProgressUI();
 const fontsReady = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load(`20px "Bagel Fat One"`), document.fonts.load(`14px "Atkinson Hyperlegible"`)]).catch(()=>{}) : Promise.resolve();
 fontsReady.then(()=>{});
