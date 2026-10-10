@@ -98,6 +98,8 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
 .stamp-status[data-ink="FORBIDDEN"] b{background:#622c23;border-color:#f07a62;color:#fff0e9}
 .stamp-status span{font-size:14px;color:var(--muted)}
 .playbar{align-items:center;gap:10px}
+.save-status{font-size:14px;color:var(--muted)}
+#savedProgress{font-family:var(--body);font-size:14px;color:var(--muted)}
 
 .play-guide{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:16px;padding:16px 20px;border:3px solid var(--signal);border-radius:12px;background:#fbf4e2;color:#201b14}
 .guide-copy{min-width:0}
@@ -149,7 +151,7 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <div class="guide-ink" id="guideInk" hidden><span>Needed ink</span><strong id="guideInkName"></strong><p id="guideInkHelp"></p></div>
     <button type="button" id="skipTutorial" hidden>Skip tutorial</button>
   </aside>
-  <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
+  <div class="playbar"><div class="stamp-status" id="stampStatus" hidden><b id="stampInk" role="status" aria-live="polite">No stamp yet</b><span id="stampHelp">Find the Official Stamp</span></div><span class="save-status" id="saveStatus" role="status" aria-live="polite" hidden></span><button class="btn alt" id="pauseBtn" type="button" aria-controls="pauseScreen" hidden>Pause</button></div>
   <div class="stage" id="stage">
     <canvas id="game" tabindex="0" aria-label="BLORT game screen"></canvas>
     <div class="overlay" id="titleScreen">
@@ -165,10 +167,12 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
         <button class="tog" data-level="5" aria-pressed="false">4-1 The Large Small Desert<span>Unfold cardboard horizons, stretch across ravines, dodge tumbleweed paperwork</span></button>
       </div>
       <div class="modes">
+        <button class="btn" id="continueBtn" type="button" hidden>Continue saved game</button>
         <button class="btn" id="startRelaxed">Relaxed<small>Tap to walk, no failing, slower</small></button>
         <button class="btn alt" id="startStandard">Standard<small>The original challenge</small></button>
         <button class="btn alt" id="resumeLevelBtn" type="button" hidden>Resume current level</button>
       </div>
+      <p id="savedProgress" hidden></p>
       <p style="font-size:13px;color:var(--muted)">You can fine-tune any of this below the game, even mid-level.</p>
     </div>
     <div class="overlay" id="characterDialog" role="dialog" aria-modal="true" aria-labelledby="characterTitle" hidden>
@@ -189,9 +193,10 @@ ul{margin:0;padding-left:18px;font-size:14px;display:flex;flex-direction:column;
     <div class="overlay" id="eggDialog" role="dialog" aria-modal="true" aria-labelledby="eggTitle" hidden><h2 id="eggTitle">Mr. Yolk, Department of Waiting</h2><p id="eggWords"></p><div class="modes"><button class="btn" id="eggHelp" type="button">Find his missing form</button><button class="btn alt" id="eggWhistle" type="button">Whistle away the hold music</button><button class="btn alt" id="eggLeave" type="button">Back to the road</button></div></div>
     <div class="overlay" id="pauseScreen" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" hidden>
       <h2 id="pauseTitle">Breakfast on hold</h2>
-      <p>The game is paused. Take your time.</p><p id="pauseObjective" style="color:var(--signal);font-weight:700"></p>
+      <p>The game is paused. Take your time.</p><p id="pauseObjective" style="color:var(--signal);font-weight:700"></p><p id="pauseCheckpoint"></p>
       <div class="modes">
         <button class="btn" id="resumeBtn" type="button">Resume</button>
+        <button class="btn alt" id="checkpointBtn" type="button">Restart from checkpoint</button>
         <button class="btn alt" id="restartBtn" type="button">Restart Level</button>
         <button class="btn alt" id="pauseLevelSelectBtn" type="button">Level Select</button>
         <button class="btn alt" id="pauseSettingsBtn" type="button" aria-expanded="false" aria-controls="pauseSettings">Settings</button>
@@ -345,7 +350,7 @@ const PRESETS = {
 };
 let SET = Object.assign({}, PRESETS.relaxed);
 try{ const saved = JSON.parse(localStorage.getItem('blort-settings')||'null'); if(saved) SET = Object.assign(SET, saved); }catch(e){}
-function saveSet(){ try{ localStorage.setItem('blort-settings', JSON.stringify(SET)); }catch(e){} syncSetUI(); }
+function saveSet(){ try{ localStorage.setItem('blort-settings', JSON.stringify(SET)); }catch(e){} syncSetUI(); autosaveProgress(0,true); }
 function reach(n){ return SET.reach ? n*1.5 : n; }
 let autoDir = 0, edgeStopped = false;
 function syncSetUI(){
@@ -388,7 +393,7 @@ window.addEventListener('keydown', e => {
   }
   if(paused || e.target.closest('button, a, input, select, textarea')) return;
   if(e.code === 'KeyM'){ soundOn = !soundOn; popup(soundOn ? 'Sound: Approved' : 'Sound: Suspended Pending Review'); return; }
-  if(e.code === 'Enter' && state === 'title'){ startGame(SET.nofail ? 'relaxed' : 'standard', startLevelChoice); return; }
+  if(e.code === 'Enter' && state === 'title'){ e.preventDefault(); if(savedProgress)continueSavedGame();else startGame(SET.nofail ? 'relaxed' : 'standard', startLevelChoice); return; }
   const k = KEYMAP[e.code]; if(!k) return;
   if(state === 'play' || state === 'dead') e.preventDefault();
   if(!e.repeat) press(k);
@@ -2144,6 +2149,7 @@ function winLevel(){
   else if(LEVEL===4){tuesdayExit.done=true;floatText('*Wednesday reluctantly becomes available*',tuesdayExit.x,220,C.paper);achieve('Completed Tuesday');}
   else{desertExit.done=true;floatText('*the small door receives enormous applause*',desertExit.x,220,C.paper);achieve('Crossed a Large Small Desert');}
   [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.25,'triangle',.06),i*130));
+  autosaveProgress(0,true);
 }
 function showWin(){
   const y = collect.filter(c=>c.t==='yawn'), f = collect.filter(c=>c.t==='form'), bt = collect.filter(c=>c.t==='button'), n = collect.find(c=>c.t==='nothing');
@@ -2397,6 +2403,7 @@ function drawBackground(){
 }
 function drawOverlay(){
   if(LEVEL===5){if(LAY.vig)ctx.drawImage(LAY.vig.c,0,0,W,H);return;}
+  if(!LAY.vig)buildScenery();
   if(LEVEL===3){ctx.fillStyle='rgba(20,48,38,.08)';ctx.fillRect(0,0,W,H);ctx.drawImage(LAY.vig.c,0,0,W,H);return;}
   drawTile(LAY.fore, 1.35, H-90, 200);
   for(const m of motes){
@@ -3206,6 +3213,152 @@ function updateEggQuest(){
 
 /* ---------------- loop ---------------- */
 let paused = false, suspendedState = null;
+
+/* Saves contain checkpoint progress, never a midair position or held input. */
+const PROGRESS_KEY='blort-progress-v1';
+const LEVEL_CODES=['','1-1','1-2','2-1','3-1','4-1'];
+const LEVEL_NAMES=['','Permit to Toast','The Annex','Outdoor Indoors','Tuesday','The Large Small Desert'];
+const RETURN_POINTS={1:[130,1050,2108,3608,4648],2:[80,998,2098,3068,4128,5268],3:[80,1088,2238,3488],4:[80,1368,2748,4128],5:[80,1498,3168,4998,5818]};
+let saveAvailable=true, saveProbe=0, saveAge=0, lastSaveSignature='';
+function validProgress(d){
+  try{
+    const bool=x=>typeof x==='boolean',mark=x=>x===null||x==='APPROVED'||x==='FORBIDDEN';
+    const list=(a,n,test)=>Array.isArray(a)&&a.length===n&&a.every(test);
+    const num=(x,max)=>Number.isFinite(x)&&x>=0&&x<=max;
+    if(!d||d.version!==1||!Number.isInteger(d.level)||d.level<1||d.level>5||!bool(d.completed))return false;
+    const l=d.level,point=d.checkpoint;
+    if(!point||point.y!==GY-40||!(RETURN_POINTS[l].includes(point.x)||(l===1&&point.x===480)))return false;
+    const s=d.settings,i=d.inventory,w=d.world;
+    if(!s||!['walk','brake','easyJump','nofail','reach','buttons'].every(k=>bool(s[k]))||![.5,.75,1].includes(s.speed))return false;
+    if(!i||![i.stamp,i.stretch,i.pocket].every(bool)||!['APPROVED','FORBIDDEN'].includes(i.ink)||![null,'duck','helium','key'].includes(i.item)||(!i.pocket&&i.item!==null))return false;
+    if(l>=2&&!i.stamp)return false;
+    if((l!==2&&i.pocket)||(l!==2&&l!==5&&i.stretch)||(l===5&&!i.stretch))return false;
+    if(!Number.isInteger(d.deaths)||!num(d.deaths,1000000)||!num(d.elapsed,1000000000))return false;
+    if(!Array.isArray(d.achievements)||d.achievements.length>100||!d.achievements.every(x=>typeof x==='string'&&x.length<=120))return false;
+    if(!Number.isInteger(d.tutorial)||d.tutorial< -1||d.tutorial>2||(l!==1&&d.tutorial!==-1))return false;
+    if(!['new','fetch','music','helped','quiet'].includes(d.quest)||(l!==1&&d.quest!=='new'))return false;
+    const extra=l===1?(d.quest==='helped'?4:d.quest==='fetch'?1:0):0;
+    const count=[0,29,19,9,14,20][l]+extra;
+    if(!list(d.collected,count,bool)||!list(d.revealed,count,bool)||!list(d.stations,[0,5,6,3,4,5][l],bool)||!list(d.triggers,[0,4,1,3,3,4][l],bool))return false;
+    if(!list(d.environment,l===4?3:4,q=>q&&mark(q.mark)&&bool(q.open)&&(q.x===null||num(q.x,6600))))return false;
+    if(l===1)return w&&[w.gate,w.bridge,w.bridgeUnaffected,w.barrier.down,w.bossDone].every(bool)&&mark(w.barrier.mark)&&num(w.barrier.height,250)&&w.barrier.height>=130&&mark(w.lift.mark)&&['pending','up','down'].includes(w.lift.state)&&list(w.crabs,2,c=>c&&[c.alive,c.frozen,c.approved].every(bool)&&(c.x===null||num(c.x,5200)));
+    if(l===2)return w&&bool(w.door)&&list(w.pickups,2,bool)&&list(w.bossesDone,4,bool)&&i.stretch===w.pickups[0]&&i.pocket===w.pickups[1];
+    if(l===3)return w&&list(w.elevators,2,mark)&&mark(w.cabinet)&&bool(w.bossDone);
+    if(l===4)return w&&list(w.clocks,3,bool);
+    return w&&list(w.horizons,3,bool)&&list(w.fans,3,bool)&&list(w.forms,3,f=>f&&bool(f.frozen)&&(f.x===null||num(f.x,6200)));
+  }catch(e){return false;}
+}
+function readSavedProgress(){
+  let raw;
+  try{
+    raw=localStorage.getItem(PROGRESS_KEY);
+  }catch(e){saveAvailable=false;return null;}
+  if(!raw||raw.length>65536)return null;
+  try{const d=JSON.parse(raw);return validProgress(d)?d:null;}catch(e){return null;}
+}
+let savedProgress=readSavedProgress();
+function pointName(level,x){
+  if(level===1&&x===480)return 'Mr. Yolk’s return point';
+  const n=RETURN_POINTS[level].indexOf(x);
+  return n<=0?'Start of level':'Checkpoint '+n+' of '+(RETURN_POINTS[level].length-1);
+}
+function syncProgressUI(){
+  const button=document.getElementById('continueBtn');
+  button.hidden=state!=='title'||!!suspendedState||!savedProgress;
+  const note=document.getElementById('savedProgress');note.hidden=!savedProgress&&saveAvailable;
+  if(savedProgress){
+    const label=LEVEL_CODES[savedProgress.level]+' '+LEVEL_NAMES[savedProgress.level];
+    button.textContent=(savedProgress.completed?'View completion · ':'Continue · ')+LEVEL_CODES[savedProgress.level];
+    note.textContent=(saveAvailable?'Saved: ':'Last save: ')+label+' · '+(savedProgress.completed?'Level complete':pointName(savedProgress.level,savedProgress.checkpoint.x))+'.'+(saveAvailable?' In this browser.':' Autosave is unavailable.');
+  }else if(!saveAvailable)note.textContent='Autosave is unavailable in this browser. You can still play and restart from checkpoints.';
+  const status=document.getElementById('saveStatus');status.hidden=state!=='play'&&state!=='dead';
+  const text=saveAvailable&&savedProgress?'Autosaved · '+pointName(savedProgress.level,savedProgress.checkpoint.x):'Autosave unavailable';
+  if(status.textContent!==text)status.textContent=text;
+}
+function progressSnapshot(){
+  let world;
+  if(LEVEL===1)world={gate:gate.open,bridge:bridge.toasted,bridgeUnaffected:bridge.unaffected,lift:{state:lift.state,mark:lift.mark},barrier:{down:barrier.down,mark:barrier.mark,height:barrier.h},bossDone:boss.state==='gone'||boss.state==='defeated',crabs:crabs.map(c=>({alive:c.alive,frozen:!!c.frozen,approved:!!c.approved,x:c.frozen?c.x:null}))};
+  else if(LEVEL===2)world={pickups:pickups2.map(p=>p.got),door:annexDoor.open,bossesDone:arenas.map(a=>a.state==='done')};
+  else if(LEVEL===3)world={elevators:deptElevators.map(e=>e.mark),cabinet:deptCabinet.mark,bossDone:deptBoss.state==='defeated'};
+  else if(LEVEL===4)world={clocks:tuesdayClocks.map(c=>c.after)};
+  else world={horizons:desertPanels.map(p=>p.open),fans:desertFans.map(f=>f.quiet),forms:tumbleForms.map(f=>({frozen:f.frozen,x:f.frozen?f.x:null}))};
+  return {version:1,level:LEVEL,completed:state==='win',checkpoint:{x:respawn.x,y:respawn.y},settings:{...SET},inventory:{stamp:hasStamp,stretch:hasStretch,pocket:hasPocket,item:pocketItem,ink:stampMode},collected:collect.map(c=>c.got),revealed:collect.map(c=>!c.hidden),stations:checkpoints.map(c=>c.on),triggers:triggers.map(t=>t.done),achievements:[...achievements],deaths,elapsed:levelTime,tutorial:LEVEL===1&&tutorialStep<3?tutorialStep:-1,quest:eggQuest,world,environment:environmentProps.map(q=>({mark:q.mark,open:q.open,x:q.type==='chair'&&q.mark==='FORBIDDEN'?q.x:null}))};
+}
+function autosaveProgress(dt=0,force=false){
+  if(state!=='play'&&state!=='dead'&&state!=='win'&&!(state==='title'&&suspendedState))return;
+  saveProbe+=dt;saveAge+=dt;
+  if(!force&&saveProbe<.25)return;
+  saveProbe=0;
+  const data=progressSnapshot(),signature=JSON.stringify({...data,elapsed:0});
+  if(!force&&signature===lastSaveSignature&&saveAge<5)return;
+  lastSaveSignature=signature;saveAge=0;
+  try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(data));savedProgress=data;saveAvailable=true;}
+  catch(e){saveAvailable=false;}
+  syncProgressUI();
+}
+function applySavedProgress(d){
+  const i=d.inventory,w=d.world;
+  hasStamp=i.stamp;hasStretch=i.stretch;hasPocket=i.pocket;pocketItem=i.item;stampMode=i.ink;
+  eggQuest=d.quest;
+  if(LEVEL===1){
+    if(eggQuest==='fetch'||eggQuest==='helped')collect.push({t:'eggform',x:850,y:GY-28,got:false,name:'Mr. Yolk’s missing form'});
+    if(eggQuest==='helped'){for(let n=0;n<3;n++)collect.push({t:'yawn',x:560+n*40,y:400,got:false});eggs[0].line='Your paperwork has opened doors. Literally.';}
+    if(eggQuest==='quiet')eggs[0].line='Your place is saved. Please do not become breakfast.';
+    gate.open=w.gate;gate.t=w.gate?1:0;bridge.toasted=w.bridge;bridge.unaffected=w.bridgeUnaffected;stamp.got=hasStamp;
+    lift.state=w.lift.state;lift.mark=w.lift.mark;lift.y=lift.state==='up'?lift.top:GY;
+    barrier.down=w.barrier.down;barrier.mark=w.barrier.mark;barrier.h=w.barrier.height;barrier.y=GY-barrier.h;barrier.t=barrier.down?1:0;
+    if(w.bossDone){boss.state='gone';boss.hp=0;}
+    crabs.forEach((c,n)=>{const p=w.crabs[n];c.alive=p.alive;c.frozen=p.frozen;c.approved=p.approved;c.st=p.frozen?'frozen':'patrol';c.mark=p.frozen?'FORBIDDEN':p.approved?'APPROVED':null;c.dt=p.alive?0:2;if(p.x!==null)c.x=Math.max(c.minX,Math.min(c.maxX-c.w,p.x));});
+  }else if(LEVEL===2){
+    pickups2.forEach((p,n)=>p.got=w.pickups[n]);annexDoor.open=w.door;annexDoor.t=w.door?1:0;
+    arenas.forEach((a,n)=>{if(w.bossesDone[n]){a.b.reset();a.b.hp=0;a.state='done';a.t=2;if(a.b.box)a.b.box={tug:true,duck:true,stamp:true};}});
+  }else if(LEVEL===3){
+    deptElevators.forEach((e,n)=>{e.mark=w.elevators[n];e.y=e.base;e.target=e.mark==='APPROVED'?e.top:e.base;});
+    deptCabinet.mark=w.cabinet;deptCabinet.open=w.cabinet==='FORBIDDEN';deptCabinet.t=Number(deptCabinet.open);deptBridge.solid=deptCabinet.open;deptBridge.t=Number(deptBridge.solid);
+    if(w.bossDone){deptBoss.state='defeated';deptBoss.hp=0;}
+    deptExit.open=w.bossDone&&w.elevators.every(m=>m==='APPROVED')&&w.cabinet==='FORBIDDEN';
+  }else if(LEVEL===4){
+    tuesdayClocks.forEach((c,n)=>{c.after=w.clocks[n];tuesdayGates[n].open=c.after;tuesdayGates[n].t=Number(c.after);});tuesdayExit.open=w.clocks.every(Boolean);
+  }else{
+    desertPanels.forEach((p,n)=>{p.open=w.horizons[n];p.t=Number(p.open);});desertFans.forEach((f,n)=>f.quiet=w.fans[n]);
+    tumbleForms.forEach((f,n)=>{f.frozen=w.forms[n].frozen;f.stun=f.frozen?99:0;if(w.forms[n].x!==null)f.x=Math.max(f.min,Math.min(f.max,w.forms[n].x));});desertExit.open=w.horizons.every(Boolean);
+  }
+  collect.forEach((c,n)=>{c.got=d.collected[n];c.hidden=!d.revealed[n];});
+  checkpoints.forEach((c,n)=>c.on=d.stations[n]);triggers.forEach((t,n)=>t.done=d.triggers[n]);
+  environmentProps.forEach((q,n)=>{const p=d.environment[n];q.mark=p.mark;q.open=p.open;if(q.type==='chair'&&p.x!==null)q.x=Math.max(q.min,Math.min(q.max,p.x));});
+  achievements=new Set(d.achievements);deaths=d.deaths;levelTime=d.elapsed;
+  respawn={x:d.checkpoint.x,y:d.checkpoint.y,first:false};spawnPlayer();P.inv=2;P.safe={x:P.x,y:P.y};
+  tutorialStep=d.tutorial;tutorialDoneTime=0;solidsCache=solids();
+}
+function continueSavedGame(){
+  if(state!=='title'||suspendedState)return;
+  savedProgress=readSavedProgress();
+  if(!savedProgress){syncProgressUI();return;}
+  SET={...savedProgress.settings};syncSetUI();
+  try{localStorage.setItem('blort-settings',JSON.stringify(SET));}catch(e){}
+  startGame(null,savedProgress.level,savedProgress);
+}
+function resetCheckpointEncounters(){
+  if(LEVEL===1&&(boss.state==='intro'||boss.state==='fight'))Object.assign(boss,{state:'idle',hp:3,t:0,fire:1.4,flash:0,pending:false});
+  if(LEVEL===2)for(const a of arenas)if(a.state==='intro'||a.state==='fight'){a.state='idle';a.t=0;a.b.reset();}
+  if(LEVEL===3&&deptBoss.state!=='defeated')Object.assign(deptBoss,{state:'dormant',hp:deptBoss.maxHp,t:0,fire:0,flash:0});
+  spCites=[];cites=[];hz=[];ducks=[];horseDrops=[];timeDrops=[];soundWaves=[];stampFlashes=[];
+  for(const c of crabs)if(c.alive&&!c.frozen){c.st='patrol';c.t=0;c.cd=1;}
+  for(const s of spoons){s.st='patrol';s.cd=1;}
+  for(const h of ceilingHorses){h.phase='wait';h.t=2;h.stun=1;}
+  for(const r of loudRectangles){r.state='quiet';r.t=2;r.stun=1;}
+  for(const c of impatientClouds){c.warn=false;c.cd=2;}
+  for(const f of tumbleForms)if(!f.frozen){f.state='patrol';f.t=1.2;f.stun=1.5;}
+  for(const q of environmentProps){q.vx=0;q.t=0;q.cool=0;}
+}
+function restartFromCheckpoint(){
+  if(!paused||(state!=='play'&&state!=='dead'))return;
+  clearInput();restoreSettings();resetCheckpointEncounters();popups=[];reset(false);
+  state='play';paused=false;deadT=0;P.inv=2;P.safe={x:P.x,y:P.y};solidsCache=solids();
+  pauseScreen.hidden=true;last=performance.now();cv.focus();
+  popup('Returned to '+pointName(LEVEL,respawn.x)+'. Level progress kept.');
+  syncPlayGuide();syncTouchControls();autosaveProgress(0,true);
+}
 const pauseScreen = document.getElementById('pauseScreen');
 const pauseBtn = document.getElementById('pauseBtn');
 const touchPanel = document.getElementById('touch');
@@ -3243,19 +3396,22 @@ function resumeGame(){
   if(state==='title'&&suspendedState){resumeSuspendedLevel();return;}
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   last = performance.now(); cv.focus();
-  syncPlayGuide();syncTouchControls();
+  syncPlayGuide();syncTouchControls();syncProgressUI();
 }
 function togglePause(){
   if(!eggDialog.hidden) return;
   if(state==='title'&&suspendedState){resumeSuspendedLevel();return;}
   if(state !== 'play' && state !== 'dead') return;
   if(paused){ resumeGame(); return; }
+  autosaveProgress(0,true);
   paused = true; clearInput(); pauseScreen.hidden = false;
   document.getElementById('pauseObjective').textContent=LEVEL===5?'Objective: stamp all three horizon hinges APPROVED, use Sock Stretch at the striped handles to cross the ravines, then reach the small exit on the right. Whistle pauses rolling paperwork and stops the wind.':LEVEL===4?'Objective: whistle all three clocks to 12:01, avoid the awakened clouds, then reach Wednesday.':LEVEL===3?'Objective: approve both leafy elevators, forbid the river cabinet, then reach the Tuesday exit.':LEVEL===2?'Objective: clear the Annex confrontations and reach the exit.':'Objective: proceed right through the Municipal Breakfast District.';
+  document.getElementById('pauseCheckpoint').textContent='Return point: '+pointName(LEVEL,respawn.x)+'. Collected items and completed puzzles are kept.';
   document.getElementById('resumeBtn').focus();
   syncPlayGuide();syncTouchControls();
 }
 function returnToLevelSelect(){
+  autosaveProgress(0,true);
   suspendedState=paused&&(state==='play'||state==='dead')?state:null;
   paused=!!suspendedState;clearInput();restoreSettings();
   if(!suspendedState)endTutorial();
@@ -3266,7 +3422,7 @@ function returnToLevelSelect(){
   const resume=document.getElementById('resumeLevelBtn');resume.hidden=!suspendedState;
   resume.textContent='Resume '+document.getElementById('levelHeading').textContent;
   document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
-  syncPlayGuide();syncTouchControls();
+  syncPlayGuide();syncTouchControls();syncProgressUI();
   document.querySelector('[data-level="'+LEVEL+'"]').focus();
 }
 function resumeSuspendedLevel(){
@@ -3281,6 +3437,8 @@ pauseBtn.addEventListener('click', togglePause);
 document.getElementById('resumeBtn').addEventListener('click', resumeGame);
 document.getElementById('pauseLevelSelectBtn').addEventListener('click', returnToLevelSelect);
 document.getElementById('resumeLevelBtn').addEventListener('click', resumeSuspendedLevel);
+document.getElementById('continueBtn').addEventListener('click',continueSavedGame);
+document.getElementById('checkpointBtn').addEventListener('click',restartFromCheckpoint);
 document.getElementById('restartBtn').addEventListener('click', () => startGame(null, LEVEL));
 document.getElementById('pauseSettingsBtn').addEventListener('click', () => {
   const box = document.getElementById('pauseSettings');
@@ -3297,10 +3455,11 @@ pauseScreen.addEventListener('keydown', e => {
 });
 window.addEventListener('blur', () => { if(!paused && (state === 'play' || state === 'dead')) togglePause(); });
 document.addEventListener('visibilitychange', () => { if(document.hidden && !paused && (state === 'play' || state === 'dead')) togglePause(); });
+window.addEventListener('pagehide',()=>autosaveProgress(0,true));
 let last = performance.now();
 function frame(now){
   const dt = Math.min(1/30, (now-last)/1000); last = now;
-  if(!paused) update(dt * (state==='play' || state==='dead' ? SET.speed : 1));
+  if(!paused){update(dt * (state==='play' || state==='dead' ? SET.speed : 1));autosaveProgress(dt);}
   render();
   syncPlayGuide();syncTouchControls();
   document.getElementById('talkEgg').hidden = state!=='play'||paused||!nearEgg();
@@ -3334,19 +3493,24 @@ function setLevelHeading(lvl){
   document.title=data[1]+' · BLORT';
 }
 
-function startGame(mode, lvl){
+function startGame(mode, lvl, progress=null){
   suspendedState=null;document.getElementById('resumeLevelBtn').hidden=true;
   eggQuest='new';eggDialog.hidden=true;
   stampFlashes = [];
   paused = false; clearInput(); restoreSettings(); pauseScreen.hidden = true;
   if(mode === 'relaxed' || mode === 'standard') applyPreset(mode);
-  LEVEL = lvl || LEVEL || 1; setLevelHeading(LEVEL);
+  LEVEL = lvl || LEVEL || 1; startLevelChoice=LEVEL;setLevelHeading(LEVEL);
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.level===LEVEL)));
   autoDir = 0; edgeStopped = false;
   audio(); popups = [];
-  reset(true); state = 'play'; beginTutorial();
+  reset(true);state='play';
+  if(progress)applySavedProgress(progress);else beginTutorial();
+  solidsCache=solids();saveProbe=0;saveAge=0;lastSaveSignature='';
   document.getElementById('titleScreen').hidden = true;
   document.getElementById('winScreen').hidden = true;
-  syncTouchControls();
+  if(progress&&progress.completed){state='win';winT=3;P.hidden=true;exitDoor.done=true;showWin();}
+  syncPlayGuide();syncTouchControls();autosaveProgress(0,true);
+  if(progress){if(!progress.completed){popup('Continued from '+pointName(LEVEL,respawn.x)+'.');last=performance.now();cv.focus();}return;}
   cv.focus();
   if(LEVEL === 1) announce('Welcome to the Municipal Breakfast District. Proceed right. Breakfast ends when approved.');
   if(LEVEL === 3) announce('DEPARTMENT OF OUTDOOR INDOORS. APPROVE ELEVATORS. FORBID THE RIVER CABINET. REACH TUESDAY.');
@@ -3372,6 +3536,7 @@ cv.addEventListener('pointerdown', () => cv.focus());
 // attract mode behind title
 time = 0; popups = []; reset(true); state = 'title';
 P.x = 300; P.y = GY-40; P.vy = 0; P.vx = 0; camX = 0;
+syncProgressUI();
 const fontsReady = (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load(`20px "Bagel Fat One"`), document.fonts.load(`14px "Atkinson Hyperlegible"`)]).catch(()=>{}) : Promise.resolve();
 fontsReady.then(()=>{});
 requestAnimationFrame(frame);

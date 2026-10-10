@@ -28,6 +28,10 @@ Every completion screen offers **Play This Level Again** and **Return to Level S
 
 A readable **Next step** panel above the game follows each level's puzzles and confrontations. Stamp puzzles show the ink they need and tell you when to switch ink. The opening tutorial uses this panel too.
 
+Progress **autosaves in the same browser**. Choose **Continue** on the main screen after closing or refreshing the page to return to your last checkpoint with collected items, unlocked abilities, puzzle approvals, and completed bosses intact. Completed levels retain their results screen. Starting a fresh level replaces the saved run.
+
+The pause menu also offers **Restart from checkpoint**. It returns you to your latest station, clears active attacks and held controls, and keeps level progress. Unfinished confrontations restart; completed bosses stay cleared. **Restart Level** still starts the whole level over. Saving uses browser storage; checkpoint recovery works even when storage is unavailable.
+
 ## Controls
 
 | Action | Keys |
